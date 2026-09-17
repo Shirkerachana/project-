@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   Settings,
   User,
@@ -16,13 +17,35 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useToast } from '../context/ToastContext';
+import { IntegrationsPage } from '../features/settings/integrations/IntegrationsPage';
 
 export const SettingsPage: React.FC = () => {
   const { user, role } = useAuth();
   const { isBright, toggleTheme } = useTheme();
   const toast = useToast();
+  const { tab } = useParams<{ tab?: string }>();
+  const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState<'profile' | 'preferences' | 'notifications' | 'integrations' | 'account'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'preferences' | 'notifications' | 'integrations' | 'account'>(() => {
+    if (tab === 'integrations') return 'integrations';
+    if (tab === 'preferences') return 'preferences';
+    if (tab === 'notifications') return 'notifications';
+    if (tab === 'account') return 'account';
+    return 'profile';
+  });
+
+  useEffect(() => {
+    if (tab === 'integrations') setActiveTab('integrations');
+    else if (tab === 'preferences') setActiveTab('preferences');
+    else if (tab === 'notifications') setActiveTab('notifications');
+    else if (tab === 'account') setActiveTab('account');
+    else if (tab === 'profile') setActiveTab('profile');
+  }, [tab]);
+
+  const handleTabChange = (newTab: 'profile' | 'preferences' | 'notifications' | 'integrations' | 'account') => {
+    setActiveTab(newTab);
+    navigate(newTab === 'profile' ? '/settings' : `/settings/${newTab}`);
+  };
 
   // Form states
   const [name, setName] = useState(user?.name || 'David Miller');
@@ -63,7 +86,7 @@ export const SettingsPage: React.FC = () => {
         <div className="md:col-span-3 space-y-1">
           <button
             type="button"
-            onClick={() => setActiveTab('profile')}
+            onClick={() => handleTabChange('profile')}
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
               activeTab === 'profile'
                 ? 'bg-indigo-600 text-white shadow-sm'
@@ -76,7 +99,7 @@ export const SettingsPage: React.FC = () => {
 
           <button
             type="button"
-            onClick={() => setActiveTab('preferences')}
+            onClick={() => handleTabChange('preferences')}
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
               activeTab === 'preferences'
                 ? 'bg-indigo-600 text-white shadow-sm'
@@ -89,7 +112,7 @@ export const SettingsPage: React.FC = () => {
 
           <button
             type="button"
-            onClick={() => setActiveTab('notifications')}
+            onClick={() => handleTabChange('notifications')}
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
               activeTab === 'notifications'
                 ? 'bg-indigo-600 text-white shadow-sm'
@@ -102,7 +125,7 @@ export const SettingsPage: React.FC = () => {
 
           <button
             type="button"
-            onClick={() => setActiveTab('integrations')}
+            onClick={() => handleTabChange('integrations')}
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
               activeTab === 'integrations'
                 ? 'bg-indigo-600 text-white shadow-sm'
@@ -110,12 +133,12 @@ export const SettingsPage: React.FC = () => {
             }`}
           >
             <Cpu className="w-4 h-4" />
-            <span>Integrations & Telephony</span>
+            <span>Integrations</span>
           </button>
 
           <button
             type="button"
-            onClick={() => setActiveTab('account')}
+            onClick={() => handleTabChange('account')}
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
               activeTab === 'account'
                 ? 'bg-indigo-600 text-white shadow-sm'
@@ -291,47 +314,7 @@ export const SettingsPage: React.FC = () => {
           )}
 
           {activeTab === 'integrations' && (
-            <div className="space-y-4">
-              <div className="border-b border-slate-800 pb-3">
-                <h3 className="text-sm font-bold text-white">System Integrations</h3>
-                <p className="text-xs text-slate-400">Status of connected communication and calendar services.</p>
-              </div>
-
-              <div className="space-y-3 text-xs">
-                <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-                  <div>
-                    <span className="font-bold text-white block">Google / Outlook Calendar Two-Way Sync</span>
-                    <span className="text-[11px] text-slate-400">Synchronizes interview meetings to personal calendars.</span>
-                  </div>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 font-mono">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Connected</span>
-                  </span>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-                  <div>
-                    <span className="font-bold text-white block">WebRTC Video & AI Avatar Streaming Cluster</span>
-                    <span className="text-[11px] text-slate-400">Sub-80ms encrypted media server for live candidate sessions.</span>
-                  </div>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 font-mono">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Operational (v3.4)</span>
-                  </span>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-                  <div>
-                    <span className="font-bold text-white block">Whisper Real-Time Speech Transcription (STT)</span>
-                    <span className="text-[11px] text-slate-400">Multi-lingual technical vocabulary speech-to-text pipeline.</span>
-                  </div>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 font-mono">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Active</span>
-                  </span>
-                </div>
-              </div>
-            </div>
+            <IntegrationsPage />
           )}
 
           {activeTab === 'account' && (
@@ -359,16 +342,18 @@ export const SettingsPage: React.FC = () => {
           )}
 
           {/* Footer Save Button */}
-          <div className="pt-4 border-t border-slate-800 flex justify-end">
-            <button
-              type="button"
-              onClick={handleSave}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition-colors shadow-md shadow-indigo-950"
-            >
-              <Save className="w-4 h-4" />
-              <span>Save Preferences</span>
-            </button>
-          </div>
+          {activeTab !== 'integrations' && (
+            <div className="pt-4 border-t border-slate-800 flex justify-end">
+              <button
+                type="button"
+                onClick={handleSave}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition-colors shadow-md shadow-indigo-950"
+              >
+                <Save className="w-4 h-4" />
+                <span>Save Preferences</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -369,6 +369,14 @@ export default function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/settings/:tab"
+                element={
+                  <ProtectedRoute>
+                    <SettingsPage />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* System Configuration & Master Data */}
               <Route

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   Settings,
   Database,
@@ -15,7 +15,8 @@ import {
   Layers,
   Save,
   Globe,
-  Bot
+  Bot,
+  ArrowRight
 } from 'lucide-react';
 import { PageHeader } from '../components/common/PageHeader';
 import { AIBadge } from '../components/common/AIBadge';
@@ -216,9 +217,18 @@ export const AdminConfigPage: React.FC = () => {
       {/* TAB 1: INTEGRATIONS */}
       {activeTab === 'integrations' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-base font-bold text-white">External System Connected Services</h3>
-            <span className="text-xs text-slate-400">All services operating with automatic retry</span>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="text-base font-bold text-white">External System Connected Services</h3>
+              <span className="text-xs text-slate-400">Core telephony, ATS, and media clusters</span>
+            </div>
+            <Link
+              to="/settings/integrations"
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 text-xs font-semibold transition-all self-start sm:self-auto"
+            >
+              <span>Manage Business Integrations</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
