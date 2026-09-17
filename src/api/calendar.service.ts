@@ -56,7 +56,7 @@ const INITIAL_EVENTS: CalendarEventItem[] = [
     type: 'debrief',
     roleTitle: 'Talent Acquisition Team',
     color: 'slate',
-    description: 'Weekly sync with Team Managers and HR to review AI scoring thresholds and final offers.'
+    description: 'Weekly sync with Team Managers and Recruiters to review AI scoring thresholds and final offers.'
   },
   {
     id: 'cal-004',

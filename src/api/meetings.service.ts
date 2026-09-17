@@ -121,9 +121,9 @@ const INITIAL_MEETINGS: MeetingItem[] = [
       },
       {
         id: 'p-8',
-        name: 'Patricia Gomez',
-        email: 'patricia.gomez@talentpulse.internal',
-        role: 'HR Director',
+        name: 'Sarah Jenkins',
+        email: 'sarah.jenkins@talentpulse.internal',
+        role: 'Team Manager',
         status: 'accepted'
       }
     ]

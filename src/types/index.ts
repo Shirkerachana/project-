@@ -1,4 +1,4 @@
-export type UserRole = 'Admin' | 'CRM' | 'TeamManager' | 'Recruiter' | 'Evaluator' | 'HR' | 'Candidate';
+export type UserRole = 'Admin' | 'CRM' | 'TeamManager' | 'Recruiter' | 'Evaluator' | 'Candidate';
 
 export interface User {
   id: string;
@@ -131,7 +131,7 @@ export interface Candidate {
   finalDecision?: {
     status: 'hire' | 'no_hire' | 'hold';
     decidedBy: string;
-    deciderRole: 'HR' | 'Recruiter';
+    deciderRole: 'Recruiter';
     decidedAt: string;
     notes: string;
     salaryOffered?: string;
@@ -360,7 +360,7 @@ export interface FinalDecisionRecord {
   requirementTitle: string;
   decision: 'hire' | 'no_hire' | 'hold';
   decidedBy: string;
-  deciderRole: 'HR' | 'Recruiter';
+  deciderRole: 'Recruiter';
   decidedAt: string;
   justification: string;
   offerDetails?: {

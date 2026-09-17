@@ -4,6 +4,9 @@ import { INITIAL_USERS } from './mockData';
 
 const AUTH_USER_KEY = 'current_user';
 const USERS_LIST_KEY = 'users_list';
+const INTERNAL_LOGIN_ROLES: readonly UserRole[] = ['Admin', 'CRM', 'TeamManager', 'Recruiter', 'Evaluator'];
+
+const isSupportedInternalRole = (role: UserRole): boolean => INTERNAL_LOGIN_ROLES.includes(role);
 
 /**
  * Service for authentication, session handling, and role switching.
@@ -19,7 +22,8 @@ export const authService = {
   async getCurrentUser(): Promise<User | null> {
     return simulateDelay(() => {
       const stored = getPersistentState<User | null>(AUTH_USER_KEY, null);
-      if (stored) return stored;
+      if (stored && isSupportedInternalRole(stored.role)) return stored;
+      if (stored) localStorage.removeItem(`talentpulse_${AUTH_USER_KEY}`);
 
       const isLoggedOut = localStorage.getItem('talentpulse_logged_out');
       if (isLoggedOut === 'true') {
@@ -42,8 +46,9 @@ export const authService = {
    */
   async loginAsRole(role: UserRole, email?: string): Promise<User> {
     return simulateDelay(() => {
+      if (!isSupportedInternalRole(role)) throw new Error('This role is not available for internal login.');
       localStorage.removeItem('talentpulse_logged_out');
-      const users = getPersistentState<User[]>(USERS_LIST_KEY, INITIAL_USERS);
+      const users = getPersistentState<User[]>(USERS_LIST_KEY, INITIAL_USERS).filter((user) => isSupportedInternalRole(user.role));
       const matched = users.find((u) => u.role === role || (email && u.email.toLowerCase() === email.toLowerCase())) || {
         id: `user-${role.toLowerCase()}`,
         name: email ? email.split('@')[0].replace(/[._]/g, ' ') : `${role} User`,
@@ -89,7 +94,7 @@ export const authService = {
    */
   async getAllUsers(): Promise<User[]> {
     return simulateDelay(() => {
-      return getPersistentState<User[]>(USERS_LIST_KEY, INITIAL_USERS);
+      return getPersistentState<User[]>(USERS_LIST_KEY, INITIAL_USERS).filter((user) => isSupportedInternalRole(user.role));
     });
   },
 

@@ -167,7 +167,6 @@ export const AuditLogPage: React.FC = () => {
             <option value="Recruiter">Recruiter</option>
             <option value="TeamManager">Team Manager</option>
             <option value="Evaluator">Evaluator</option>
-            <option value="HR">HR</option>
             <option value="Admin">Admin / AI Engine</option>
             <option value="Candidate">Candidate</option>
           </select>

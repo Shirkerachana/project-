@@ -16,7 +16,6 @@ import {
   Mail,
   Video,
   Calendar,
-  Sparkles,
   ClipboardList,
   LucideIcon
 } from 'lucide-react';
@@ -35,20 +34,20 @@ export const NAVIGATION_ITEMS: NavItem[] = [
     name: 'Dashboard',
     href: '/dashboard',
     icon: LayoutDashboard,
-    roles: ['Admin', 'CRM', 'TeamManager', 'Recruiter', 'Evaluator', 'HR']
+    roles: ['Admin', 'CRM', 'TeamManager', 'Recruiter', 'Evaluator']
   },
   // Phase 1: Requirements & Sourcing
   {
     name: 'Job Requirements',
     href: '/requirements',
     icon: FileText,
-    roles: ['Admin', 'CRM', 'TeamManager', 'Recruiter', 'HR']
+    roles: ['Admin', 'CRM', 'TeamManager', 'Recruiter']
   },
   {
     name: 'Candidates',
     href: '/candidates',
     icon: Users,
-    roles: ['Admin', 'CRM', 'TeamManager', 'Recruiter', 'Evaluator', 'HR']
+    roles: ['Admin', 'CRM', 'TeamManager', 'Recruiter', 'Evaluator']
   },
   {
     name: 'Add Candidate (AI)',
@@ -77,67 +76,39 @@ export const NAVIGATION_ITEMS: NavItem[] = [
     icon: CalendarCheck,
     roles: ['Recruiter', 'Admin']
   },
-  // Phase 4: Round 1 AI Interview
+  // Interview module: all AI and human interview rounds live in one workspace.
   {
-    name: 'AI Interview',
-    href: '/ai-interview',
+    name: 'Interview',
+    href: '/interview',
     icon: Bot,
-    roles: ['Recruiter', 'Admin'],
-    badge: 'Orchestrator'
-  },
-  {
-    name: 'Round 1 Setup',
-    href: '/interviews/round1/cand-001/setup',
-    icon: Bot,
-    roles: ['Recruiter', 'Admin', 'TeamManager'],
-    badge: 'Avatar'
-  },
-  // Phase 5: Round 2 & Decisions
-  {
-    name: 'Round 2 Evaluation',
-    href: '/decisions/round2/cand-007',
-    icon: FileCheck2,
-    roles: ['Evaluator', 'Recruiter', 'Admin', 'TeamManager']
-  },
-  {
-    name: 'Hiring Decision',
-    href: '/decisions/final/cand-007',
-    icon: Award,
-    roles: ['HR', 'Recruiter', 'Admin']
+    roles: ['Recruiter', 'Evaluator', 'TeamManager', 'Admin'],
+    badge: 'Rounds'
   },
   // Communication & Productivity Suite
   {
     name: 'Email',
     href: '/email',
     icon: Mail,
-    roles: ['Recruiter', 'TeamManager', 'Evaluator', 'HR', 'Admin', 'CRM']
+    roles: ['Recruiter', 'TeamManager', 'Evaluator', 'Admin', 'CRM']
   },
   {
     name: 'Meetings',
     href: '/meetings',
     icon: Video,
-    roles: ['Recruiter', 'TeamManager', 'Evaluator', 'HR', 'Admin', 'CRM']
+    roles: ['Recruiter', 'TeamManager', 'Evaluator', 'Admin', 'CRM']
   },
   {
     name: 'Calendar',
     href: '/calendar',
     icon: Calendar,
-    roles: ['Recruiter', 'TeamManager', 'Evaluator', 'HR', 'Admin', 'CRM']
-  },
-  // Recruiter AI Copilot (Only Recruiter and Team Manager)
-  {
-    name: 'Recruiter AI',
-    href: '/recruiter-ai',
-    icon: Sparkles,
-    roles: ['Recruiter', 'TeamManager'],
-    badge: 'Copilot'
+    roles: ['Recruiter', 'TeamManager', 'Evaluator', 'Admin', 'CRM']
   },
   // Audit Trail
   {
     name: 'Audit Log',
     href: '/audit-log',
     icon: ClipboardList,
-    roles: ['Admin', 'Recruiter', 'TeamManager', 'Evaluator', 'HR', 'CRM']
+    roles: ['Admin', 'Recruiter', 'TeamManager', 'Evaluator', 'CRM']
   },
   // Admin Configuration
   {
@@ -151,6 +122,6 @@ export const NAVIGATION_ITEMS: NavItem[] = [
     name: 'Settings',
     href: '/settings',
     icon: Settings,
-    roles: ['Admin', 'CRM', 'TeamManager', 'Recruiter', 'Evaluator', 'HR']
+    roles: ['Admin', 'CRM', 'TeamManager', 'Recruiter', 'Evaluator']
   }
 ];

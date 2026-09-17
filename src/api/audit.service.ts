@@ -216,10 +216,10 @@ const INITIAL_AUDIT_LOGS: AuditLogRecord[] = [
     id: 'audit-012',
     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
     actor: {
-      id: 'user-hr-1',
-      name: 'Patricia Gomez',
-      email: 'patricia.gomez@talentpulse.internal',
-      role: 'HR'
+      id: 'user-recruiter-1',
+      name: 'David Miller',
+      email: 'david.miller@talentpulse.internal',
+      role: 'Recruiter'
     },
     action: 'Final human decision',
     entityType: 'Decision',
@@ -227,7 +227,7 @@ const INITIAL_AUDIT_LOGS: AuditLogRecord[] = [
     entityName: 'Offer Approved & Extended',
     status: 'SUCCESS',
     severity: 'info',
-    details: 'HR Director finalized offer compensation ($185,000 base + equity). Human authority enforced.',
+    details: 'Recruiter finalized offer compensation ($185,000 base + equity). Human authority enforced.',
     relatedCandidateId: 'cand-001'
   }
 ];

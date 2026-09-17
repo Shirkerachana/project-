@@ -74,7 +74,6 @@ export const DashboardPage: React.FC = () => {
   const screeningCallsCompleted = screeningCalls.filter((c) => c.status === 'completed');
   const round1Completed = candidates.filter((c) => c.status === 'Round1_Completed');
   const round2PendingDecision = candidates.filter((c) => c.status === 'Round2_Pending_Decision');
-  const finalDecisionsPending = candidates.filter((c) => c.status === 'Final_Decision_Pending');
 
   return (
     <div id="dashboard-page" className="space-y-6">
@@ -409,7 +408,7 @@ export const DashboardPage: React.FC = () => {
             <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
               <div className="text-xs font-semibold uppercase tracking-wider text-slate-400">Completed Evaluations</div>
               <div className="text-3xl font-black text-white mt-1">1</div>
-              <div className="text-xs text-slate-400 mt-1">Forwarded to HR final gate</div>
+              <div className="text-xs text-slate-400 mt-1">Ready for recruiter final review</div>
             </div>
           </div>
 
@@ -437,63 +436,6 @@ export const DashboardPage: React.FC = () => {
                     </Link>
                   </div>
                 ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* ROLE WIDGET 5: HR DASHBOARD */}
-      {/* ========================================================================= */}
-      {role === 'HR' && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="p-5 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-500/40">
-              <div className="text-xs font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300">Pending Final Hiring Decision</div>
-              <div className="text-3xl font-black text-amber-900 dark:text-amber-400 mt-1">{finalDecisionsPending.length || 1}</div>
-              <div className="text-xs font-semibold text-amber-800/80 dark:text-slate-400 mt-1">HUMAN CONTROL POINT #3</div>
-            </div>
-            <div className="p-5 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-sm">
-              <div className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">Offers Extended</div>
-              <div className="text-3xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
-                {candidates.filter((c) => c.status === 'Offer_Extended').length}
-              </div>
-              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Final hire approved</div>
-            </div>
-            <div className="p-5 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-sm">
-              <div className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">Completed Full Cycles</div>
-              <div className="text-3xl font-black text-indigo-600 dark:text-indigo-400 mt-1">8</div>
-              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Across 5 AI phases</div>
-            </div>
-          </div>
-
-          <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800">
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <h3 className="text-base font-bold text-white">Final Hiring Decision Gate</h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Review complete candidate dossier (AI screening + AI Round 1 report + Human Round 2 assessment) to extend offer.
-                </p>
-              </div>
-            </div>
-            <div className="space-y-3 mt-4">
-              <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 flex items-center justify-between gap-4">
-                <div>
-                  <div className="font-semibold text-white text-sm flex items-center gap-2">
-                    <span>Vikram Malhotra</span>
-                    <span className="text-xs font-normal text-slate-400">Senior Full-Stack Engineer</span>
-                  </div>
-                  <div className="text-xs text-slate-400 mt-0.5">
-                    AI Round 1: <strong className="text-emerald-400">89%</strong> &bull; Human Round 2: <strong className="text-indigo-400">4.5/5.0</strong> &bull; Evaluator: Aris Thorne
-                  </div>
-                </div>
-                <Link
-                  to="/decisions/cand-007"
-                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-md"
-                >
-                  Make Hiring Call
-                </Link>
-              </div>
             </div>
           </div>
         </div>

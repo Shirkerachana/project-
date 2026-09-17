@@ -55,14 +55,6 @@ export const INITIAL_USERS: User[] = [
     role: 'Evaluator',
     title: 'Principal Distributed Systems Architect',
     department: 'Technical Advisory Board'
-  },
-  {
-    id: 'user-hr-1',
-    name: 'Patricia Gomez',
-    email: 'patricia.gomez@talentpulse.internal',
-    role: 'HR',
-    title: 'Director of People & Compensation',
-    department: 'Human Resources'
   }
 ];
 
@@ -96,7 +88,7 @@ export const INITIAL_MASTER_DATA: MasterData = {
     { code: 'sourcing', label: 'Active Sourcing', color: 'emerald' },
     { code: 'filled', label: 'Positions Filled', color: 'purple' }
   ],
-  roles: ['Admin', 'CRM', 'TeamManager', 'Recruiter', 'Evaluator', 'HR'],
+  roles: ['Admin', 'CRM', 'TeamManager', 'Recruiter', 'Evaluator'],
   departments: [
     'Cloud Architecture',
     'Core Infrastructure',

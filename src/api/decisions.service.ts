@@ -27,11 +27,11 @@ export const decisionsService = {
    *   decision: 'hire' | 'no_hire' | 'hold',
    *   justification: string,
    *   decidedBy: string,
-   *   deciderRole: 'HR' | 'Recruiter',
+   *   deciderRole: 'Recruiter',
    *   offerDetails?: { roleTitle: string, compensation: string, startDate: string, workLocation: string }
    * }
    * Response: FinalDecisionRecord
-   * Auth Required: true (HR or Recruiter)
+   * Auth Required: true (Recruiter)
    */
   async submitDecision(
     candidateId: string,
@@ -39,7 +39,7 @@ export const decisionsService = {
       decision: 'hire' | 'no_hire' | 'hold';
       justification: string;
       decidedBy: string;
-      deciderRole: 'HR' | 'Recruiter';
+      deciderRole: 'Recruiter';
       offerDetails?: {
         roleTitle: string;
         compensation: string;
@@ -146,7 +146,7 @@ export const decisionsService = {
       status: 'hire' | 'reject' | 'hold';
       notes: string;
       decidedBy: string;
-      deciderRole: any;
+      deciderRole: 'Recruiter';
       offeredCompensation?: string;
       startDate?: string;
     }
@@ -156,7 +156,7 @@ export const decisionsService = {
       decision: decisionMapped as any,
       justification: payload.notes,
       decidedBy: payload.decidedBy,
-      deciderRole: payload.deciderRole === 'HR' ? 'HR' : 'Recruiter',
+      deciderRole: 'Recruiter',
       offerDetails: payload.status === 'hire' ? {
         roleTitle: 'Engineering Position',
         compensation: payload.offeredCompensation || '$175,000 / yr',

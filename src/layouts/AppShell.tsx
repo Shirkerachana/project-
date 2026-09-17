@@ -17,6 +17,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { NAVIGATION_ITEMS } from '../config/navigation';
 import { UserRole } from '../types';
+import { FloatingBot } from '../components/bot/FloatingBot';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -33,7 +34,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   // Filter navigation items by active user role
   const allowedNavItems = NAVIGATION_ITEMS.filter((item) => item.roles.includes(role));
 
-  const allRoles: UserRole[] = ['Recruiter', 'TeamManager', 'CRM', 'Evaluator', 'HR', 'Admin'];
+  const allRoles: UserRole[] = ['Recruiter', 'TeamManager', 'CRM', 'Evaluator', 'Admin'];
 
   const handleSwitchRole = async (newRole: UserRole) => {
     setRoleMenuOpen(false);
@@ -267,6 +268,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
         {/* Main Routed Page Container */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">{children}</main>
+        <FloatingBot />
       </div>
     </div>
   );

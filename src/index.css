@@ -325,3 +325,57 @@ div,
 button {
   transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
+
+@keyframes bot-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-\[bot-in_160ms_ease-out\] { animation: none !important; }
+}
+
+/* Guided AI interview workflow controls reuse the application's indigo/surface palette. */
+#ai-interview-workflow-page .primary,
+#ai-interview-workflow-page .secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  transition: background-color 0.15s ease, opacity 0.15s ease;
+}
+#ai-interview-workflow-page .primary { background: #4f46e5; color: white; }
+#ai-interview-workflow-page .primary:hover { background: #6366f1; }
+#ai-interview-workflow-page .secondary { background: #1e293b; color: #e2e8f0; }
+#ai-interview-workflow-page .secondary:hover { background: #334155; }
+#ai-interview-workflow-page button:disabled { cursor: not-allowed; opacity: 0.5; }
+#ai-interview-workflow-page .icon { width: 0.875rem; height: 0.875rem; }
+#ai-interview-workflow-page .field { display: block; width: 100%; margin-top: 0.375rem; border: 1px solid #334155; border-radius: 0.75rem; background: #020617; color: white; padding: 0.625rem 0.75rem; font-size: 0.75rem; }
+#ai-interview-workflow-page .label { display: block; font-size: 0.75rem; font-weight: 600; color: #cbd5e1; }
+#ai-interview-workflow-page .hint { font-size: 0.75rem; color: #94a3b8; }
+#ai-interview-workflow-page .question { display: flex; gap: 0.75rem; align-items: start; border: 1px solid #1e293b; border-radius: 0.75rem; background: #020617; padding: 0.75rem; font-size: 0.75rem; color: #e2e8f0; }
+#ai-interview-workflow-page .question small { display: block; margin-top: 0.25rem; color: #94a3b8; }
+#ai-interview-workflow-page .linkbox { overflow-wrap: anywhere; border: 1px solid #1e293b; border-radius: 0.75rem; background: #020617; padding: 0.75rem; color: #a5b4fc; font-family: ui-monospace, monospace; font-size: 0.75rem; }
+#ai-interview-workflow-page .choice { display: flex; min-height: 7rem; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem; border: 1px solid #334155; border-radius: 1rem; background: #020617; color: #cbd5e1; font-size: 0.875rem; font-weight: 700; }
+#ai-interview-workflow-page .choice.selected { border-color: #818cf8; background: rgba(79, 70, 229, 0.2); color: white; }
+
+#interview-workspace-page .round-tab,
+#interview-workspace-page .round-add,
+#interview-workspace-page .workspace-primary,
+#interview-workspace-page .workspace-secondary {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; border-radius: 0.75rem; padding: 0.625rem 0.875rem; font-size: 0.75rem; font-weight: 700;
+}
+#interview-workspace-page .round-tab { white-space: nowrap; color: #94a3b8; }
+#interview-workspace-page .round-tab.active { background: #4f46e5; color: white; box-shadow: 0 1px 2px rgb(0 0 0 / 0.2); }
+#interview-workspace-page .round-tab small { color: inherit; opacity: 0.7; font-size: 0.625rem; }
+#interview-workspace-page .round-add { flex: 0 0 auto; background: #1e293b; color: #c7d2fe; }
+#interview-workspace-page .workspace-primary { background: #4f46e5; color: white; }
+#interview-workspace-page .workspace-secondary { background: #1e293b; color: #e2e8f0; }
+#interview-workspace-page .field-wrap input,
+#interview-workspace-page .field-wrap select,
+#interview-workspace-page .field-wrap textarea { display: block; box-sizing: border-box; width: 100%; margin-top: 0.375rem; border: 1px solid #334155; border-radius: 0.75rem; background: #020617; color: white; padding: 0.625rem 0.75rem; font-size: 0.75rem; }
+#interview-workspace-page .round-card { display: flex; align-items: center; gap: 0.5rem; border: 1px solid #1e293b; border-radius: 0.75rem; background: #020617; padding: 0.875rem; color: #cbd5e1; font-size: 0.75rem; font-weight: 600; }

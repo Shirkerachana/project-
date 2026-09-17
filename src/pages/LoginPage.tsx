@@ -36,11 +36,6 @@ export const LoginPage: React.FC = () => {
       desc: 'Conduct Round 2 human technical deep-dives, enter structured rubric scores and feedback.',
       sampleEmail: 'aris.thorne@techpartners.internal'
     },
-    HR: {
-      title: 'People & HR Leadership',
-      desc: 'Review full candidate dossier (AI report + Round 2 evaluation) and confirm final hire/no-hire decision.',
-      sampleEmail: 'patricia.gomez@talentpulse.internal'
-    },
     Admin: {
       title: 'System Administrator',
       desc: 'Configure master data, screening question bank, evaluation rubric weights, and evaluator calendar slots.',
@@ -164,7 +159,7 @@ export const LoginPage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {(['Recruiter', 'TeamManager', 'CRM', 'Evaluator', 'HR', 'Admin'] as UserRole[]).map((r) => {
+              {(['Recruiter', 'TeamManager', 'CRM', 'Evaluator', 'Admin'] as UserRole[]).map((r) => {
                 const isSelected = selectedRole === r;
                 return (
                   <button

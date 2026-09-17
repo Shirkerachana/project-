@@ -36,9 +36,10 @@ import { EmailPage } from './pages/EmailPage';
 import { MeetingsPage } from './pages/MeetingsPage';
 import { CalendarPage } from './pages/CalendarPage';
 import { AIInterviewWorkflowPage } from './pages/AIInterviewWorkflowPage';
-import { RecruiterAIPage } from './pages/RecruiterAIPage';
+import { InterviewWorkspacePage } from './pages/InterviewWorkspacePage';
 import { AuditLogPage } from './pages/AuditLogPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { UserRole } from './types';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -56,6 +57,11 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   }
 
   return <AppShell>{children}</AppShell>;
+};
+
+const RoleProtectedRoute: React.FC<{ allowedRoles: UserRole[]; children: React.ReactNode }> = ({ allowedRoles, children }) => {
+  const { role } = useAuth();
+  return allowedRoles.includes(role) ? <>{children}</> : <Navigate to="/dashboard" replace />;
 };
 
 export default function App() {
@@ -240,10 +246,18 @@ export default function App() {
 
               {/* Phase 4: AI Avatar Technical Interview Workflow */}
               <Route
+                path="/interview"
+                element={
+                  <ProtectedRoute>
+                    <InterviewWorkspacePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/ai-interview"
                 element={
                   <ProtectedRoute>
-                    <AIInterviewWorkflowPage />
+                    <Navigate to="/interview" replace />
                   </ProtectedRoute>
                 }
               />
@@ -300,17 +314,13 @@ export default function App() {
               <Route
                 path="/decisions/final/:candidateId"
                 element={
-                  <ProtectedRoute>
-                    <FinalHiringDecisionPage />
-                  </ProtectedRoute>
+                  <ProtectedRoute><RoleProtectedRoute allowedRoles={['Recruiter']}><FinalHiringDecisionPage /></RoleProtectedRoute></ProtectedRoute>
                 }
               />
               <Route
                 path="/decisions/:candidateId"
                 element={
-                  <ProtectedRoute>
-                    <FinalHiringDecisionPage />
-                  </ProtectedRoute>
+                  <ProtectedRoute><RoleProtectedRoute allowedRoles={['Recruiter']}><FinalHiringDecisionPage /></RoleProtectedRoute></ProtectedRoute>
                 }
               />
 
@@ -340,15 +350,6 @@ export default function App() {
                 }
               />
 
-              {/* Recruiter AI Copilot */}
-              <Route
-                path="/recruiter-ai"
-                element={
-                  <ProtectedRoute>
-                    <RecruiterAIPage />
-                  </ProtectedRoute>
-                }
-              />
 
               {/* System Audit Log */}
               <Route

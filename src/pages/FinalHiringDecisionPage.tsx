@@ -82,7 +82,7 @@ export const FinalHiringDecisionPage: React.FC = () => {
         status: decisionStatus,
         notes: decisionNotes,
         decidedBy: user?.name || 'David Ross (Account Manager)',
-        deciderRole: role,
+        deciderRole: 'Recruiter',
         offeredCompensation: decisionStatus === 'hire' ? offeredCompensation : undefined,
         startDate: decisionStatus === 'hire' ? startDate : undefined
       });
