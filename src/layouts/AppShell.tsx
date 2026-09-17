@@ -87,21 +87,6 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
           </button>
         </div>
 
-        {/* 5-Phase Workflow Indicator Bar */}
-        <div className="px-4 py-2.5 bg-slate-950/60 border-b border-slate-800/60">
-          <div className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mb-1 flex items-center justify-between">
-            <span>5-Phase AI Architecture</span>
-            <span className="text-indigo-400 font-mono">End-to-End</span>
-          </div>
-          <div className="grid grid-cols-5 gap-1 text-[9px] font-semibold text-center text-slate-400">
-            <span title="Phase 1: JD Intake & Sourcing" className="py-0.5 rounded bg-slate-800 text-indigo-300">P1</span>
-            <span title="Phase 2: Screening & RTR Gate" className="py-0.5 rounded bg-slate-800 text-indigo-300">P2</span>
-            <span title="Phase 3: AI Availability" className="py-0.5 rounded bg-slate-800 text-indigo-300">P3</span>
-            <span title="Phase 4: AI Avatar Technical" className="py-0.5 rounded bg-slate-800 text-indigo-300">P4</span>
-            <span title="Phase 5: Human Decision Gate" className="py-0.5 rounded bg-slate-800 text-indigo-300">P5</span>
-          </div>
-        </div>
-
         {/* Nav Links */}
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {allowedNavItems.map((item) => {
