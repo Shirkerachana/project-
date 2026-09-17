@@ -1,0 +1,327 @@
+@import "tailwindcss";
+
+/* ========================================================================= */
+/* GLOBAL TYPOGRAPHY & RENDERING OPTIMIZATION                                */
+/* ========================================================================= */
+
+html,
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* ========================================================================= */
+/* BRIGHT MODE SYSTEM (TalentPulse Enterprise Light Theme)                   */
+/* ========================================================================= */
+
+html.bright,
+html.bright body,
+html.bright #root,
+html.bright #app-shell {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+/* Sidebar & Header Navigation Surfaces */
+html.bright aside,
+html.bright header,
+html.bright nav.bg-slate-900 {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+html.bright .bg-slate-950\/40,
+html.bright .bg-slate-950\/50,
+html.bright .bg-slate-950\/60,
+html.bright .bg-slate-950\/80,
+html.bright [class*="bg-slate-950/"] {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Cards & Surface Containers */
+html.bright .bg-slate-900,
+html.bright .bg-slate-900\/90,
+html.bright .bg-slate-900\/80,
+html.bright .bg-slate-900\/70,
+html.bright .bg-slate-900\/60,
+html.bright .bg-slate-900\/50,
+html.bright [class*="bg-slate-900/"] {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.05) !important;
+}
+
+html.bright .bg-slate-950 {
+  background-color: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Neutralize dark gradient card containers in bright mode */
+html.bright [class*="from-indigo-950"],
+html.bright [class*="from-slate-950"],
+html.bright [class*="from-slate-900"] {
+  background-image: none !important;
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Secondary Panels, Dividers & Table Rows */
+html.bright .bg-slate-800,
+html.bright [class*="bg-slate-800/"] {
+  background-color: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+}
+
+html.bright .hover\:bg-slate-800:hover,
+html.bright .hover\:bg-slate-800\/60:hover,
+html.bright .hover\:bg-slate-800\/80:hover {
+  background-color: #e2e8f0 !important;
+}
+
+html.bright .border-slate-800,
+html.bright .border-slate-800\/80,
+html.bright .border-slate-800\/60,
+html.bright .border-slate-800\/40,
+html.bright .border-slate-700,
+html.bright [class*="border-slate-800"],
+html.bright [class*="border-slate-700"] {
+  border-color: #e2e8f0 !important;
+}
+
+/* ========================================================================= */
+/* TYPOGRAPHIC COLOR MAPPING FOR MAXIMUM CONTRAST & CRISP READABILITY       */
+/* ========================================================================= */
+
+html.bright h1,
+html.bright h2,
+html.bright h3,
+html.bright h4,
+html.bright h5,
+html.bright h6,
+html.bright .text-white,
+html.bright .text-slate-100 {
+  color: #0f172a !important;
+}
+
+/* Secondary body & description text: high contrast charcoal */
+html.bright .text-slate-200,
+html.bright .text-slate-300,
+html.bright [class*="text-slate-300"],
+html.bright [class*="text-slate-200"] {
+  color: #1e293b !important;
+}
+
+/* Muted metadata labels: dark enough to be clearly readable (passes WCAG AA) */
+html.bright .text-slate-400,
+html.bright .text-slate-500,
+html.bright [class*="text-slate-400"],
+html.bright [class*="text-slate-500"] {
+  color: #475569 !important;
+}
+
+/* Form Controls & Inputs */
+html.bright input:not([type="checkbox"]):not([type="radio"]),
+html.bright textarea,
+html.bright select {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+html.bright input::placeholder,
+html.bright textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+html.bright input:focus,
+html.bright textarea:focus,
+html.bright select:focus {
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2) !important;
+}
+
+/* Modals & Dialog Backdrops */
+html.bright .bg-slate-900.border.border-slate-800,
+html.bright [role="dialog"],
+html.bright .shadow-2xl {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1) !important;
+}
+
+/* ========================================================================= */
+/* BADGES, TAGS & ALERTS IN BRIGHT MODE (CRISP, HIGH CONTRAST)              */
+/* ========================================================================= */
+
+/* Amber / Warning Badges & Notices */
+html.bright [class*="bg-amber-950"],
+html.bright [class*="bg-amber-900"],
+html.bright [class*="bg-amber-500/10"],
+html.bright [class*="bg-amber-500/20"] {
+  background-color: #fef3c7 !important;
+  border-color: #fcd34d !important;
+}
+
+html.bright .text-amber-400,
+html.bright .text-amber-300,
+html.bright .text-amber-200,
+html.bright [class*="text-amber-"] {
+  color: #92400e !important; /* amber-800: deep, legible, never washed out */
+}
+
+/* Emerald / Success Badges & Notices */
+html.bright [class*="bg-emerald-950"],
+html.bright [class*="bg-emerald-900"],
+html.bright [class*="bg-emerald-500/10"],
+html.bright [class*="bg-emerald-500/20"] {
+  background-color: #d1fae5 !important;
+  border-color: #6ee7b7 !important;
+}
+
+html.bright .text-emerald-400,
+html.bright .text-emerald-300,
+html.bright [class*="text-emerald-"] {
+  color: #065f46 !important; /* emerald-800: crisp dark green */
+}
+
+/* Indigo / Primary Badges & Accents */
+html.bright [class*="bg-indigo-950"],
+html.bright [class*="bg-indigo-900"] {
+  background-color: #e0e7ff !important;
+  border-color: #c7d2fe !important;
+}
+
+html.bright .text-indigo-400,
+html.bright .text-indigo-300,
+html.bright [class*="text-indigo-"] {
+  color: #3730a3 !important; /* indigo-800: deep royal blue */
+}
+
+/* Rose / Error / Reject Badges & Buttons */
+html.bright [class*="bg-rose-950"],
+html.bright [class*="bg-rose-900"],
+html.bright [class*="bg-rose-500/10"],
+html.bright [class*="bg-rose-500/20"] {
+  background-color: #ffe4e6 !important;
+  border-color: #fecdd3 !important;
+}
+
+html.bright .text-rose-400,
+html.bright .text-rose-300,
+html.bright [class*="text-rose-"] {
+  color: #9f1239 !important; /* rose-800: rich dark crimson */
+}
+
+/* Cyan / ATS & Integration Badges */
+html.bright [class*="bg-cyan-950"],
+html.bright [class*="bg-cyan-900"],
+html.bright [class*="bg-cyan-500/10"],
+html.bright [class*="bg-cyan-500/20"] {
+  background-color: #cffafe !important;
+  border-color: #a5f3fc !important;
+}
+
+html.bright .text-cyan-400,
+html.bright .text-cyan-300,
+html.bright [class*="text-cyan-"] {
+  color: #155e75 !important; /* cyan-800: readable deep teal */
+}
+
+/* Purple Badges */
+html.bright [class*="bg-purple-950"],
+html.bright [class*="bg-purple-900"] {
+  background-color: #f3e8ff !important;
+  border-color: #e9d5ff !important;
+}
+
+html.bright .text-purple-400,
+html.bright .text-purple-300,
+html.bright [class*="text-purple-"] {
+  color: #6b21a8 !important; /* purple-800 */
+}
+
+/* Blue & Sky Badges */
+html.bright [class*="bg-blue-950"],
+html.bright [class*="bg-blue-900"],
+html.bright [class*="bg-sky-950"],
+html.bright [class*="bg-sky-900"] {
+  background-color: #e0f2fe !important;
+  border-color: #bae6fd !important;
+}
+
+html.bright .text-blue-400,
+html.bright .text-blue-300,
+html.bright .text-sky-400,
+html.bright .text-sky-300,
+html.bright [class*="text-blue-"],
+html.bright [class*="text-sky-"] {
+  color: #0369a1 !important; /* sky-700 */
+}
+
+/* Skill pills & tags in bright mode */
+html.bright .px-2.py-0\.5.rounded.bg-slate-800,
+html.bright [class*="bg-slate-800"][class*="rounded"] {
+  background-color: #f1f5f9 !important;
+  color: #1e293b !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+/* Preserve White Text on Solid Color Buttons */
+html.bright button.bg-indigo-600,
+html.bright a.bg-indigo-600,
+html.bright button.bg-emerald-600,
+html.bright a.bg-emerald-600,
+html.bright button.bg-rose-600,
+html.bright a.bg-rose-600,
+html.bright button.bg-cyan-700,
+html.bright a.bg-cyan-700,
+html.bright button.bg-amber-500,
+html.bright a.bg-amber-500,
+html.bright .bg-indigo-600 .text-white,
+html.bright .bg-emerald-600 .text-white,
+html.bright .bg-rose-600 .text-white,
+html.bright .bg-cyan-700 .text-white,
+html.bright .bg-indigo-600 *,
+html.bright .bg-emerald-600 *,
+html.bright .bg-rose-600 *,
+html.bright .bg-cyan-700 *,
+html.bright [class*="bg-indigo-600"] span,
+html.bright [class*="bg-emerald-600"] span,
+html.bright [class*="bg-rose-600"] span,
+html.bright [class*="bg-cyan-700"] span {
+  color: #ffffff !important;
+}
+
+/* Active navigation item text */
+html.bright aside nav a.bg-indigo-600,
+html.bright aside nav a.bg-indigo-600 * {
+  color: #ffffff !important;
+}
+
+/* Phase Indicators in Sidebar */
+html.bright .grid-cols-5 span.bg-slate-800 {
+  background-color: #e2e8f0 !important;
+  color: #334155 !important;
+}
+
+/* Score gauge track in bright mode */
+html.bright svg circle[class*="stroke-slate-950"],
+html.bright svg circle[class*="stroke-rose-950"],
+html.bright svg circle[class*="stroke-emerald-950"],
+html.bright svg circle[class*="stroke-amber-950"],
+html.bright svg circle[class*="stroke-sky-950"] {
+  stroke: #e2e8f0 !important;
+}
+
+/* Smooth transition for theme switching */
+html,
+body,
+aside,
+header,
+main,
+div,
+button {
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}

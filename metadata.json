@@ -1,0 +1,11 @@
+{
+  "name": "Remix AI Recruitment \u0026 Interview Platform",
+  "description": "End-to-end AI-powered recruitment workflow platform featuring JD intake, automated screening calls, RTR gating, avatar technical interviews, and human decision pipelines.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
