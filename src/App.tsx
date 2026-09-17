@@ -10,7 +10,7 @@ import { ToastProvider } from './context/ToastContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { AppShell } from './layouts/AppShell';
 
-// Pages
+// Core Workflow Pages
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { RequirementsListPage } from './pages/RequirementsListPage';
@@ -30,6 +30,15 @@ import { Round1ReportPage } from './pages/Round1ReportPage';
 import { Round2DecisionPage } from './pages/Round2DecisionPage';
 import { FinalHiringDecisionPage } from './pages/FinalHiringDecisionPage';
 import { AdminConfigPage } from './pages/AdminConfigPage';
+
+// Productivity, Communication & AI Suite
+import { EmailPage } from './pages/EmailPage';
+import { MeetingsPage } from './pages/MeetingsPage';
+import { CalendarPage } from './pages/CalendarPage';
+import { AIInterviewWorkflowPage } from './pages/AIInterviewWorkflowPage';
+import { RecruiterAIPage } from './pages/RecruiterAIPage';
+import { AuditLogPage } from './pages/AuditLogPage';
+import { SettingsPage } from './pages/SettingsPage';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -59,13 +68,17 @@ export default function App() {
               {/* Public Login Route */}
               <Route path="/login" element={<LoginPage />} />
 
-              {/* Candidate-Facing Avatar Interview Experience (No sidebar, independent shell) */}
+              {/* Candidate-Facing Avatar Interview Experience (No internal sidebar, independent shell) */}
               <Route
                 path="/interviews/round1/:candidateId/live"
                 element={<CandidateInterviewPage />}
               />
               <Route
                 path="/interview/:sessionId"
+                element={<CandidateInterviewPage />}
+              />
+              <Route
+                path="/meetings/:id"
                 element={<CandidateInterviewPage />}
               />
 
@@ -225,7 +238,15 @@ export default function App() {
                 }
               />
 
-              {/* Phase 4: AI Avatar Technical Interview Setup & Scored Report */}
+              {/* Phase 4: AI Avatar Technical Interview Workflow */}
+              <Route
+                path="/ai-interview"
+                element={
+                  <ProtectedRoute>
+                    <AIInterviewWorkflowPage />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/interviews/round1/:candidateId/setup"
                 element={
@@ -293,6 +314,62 @@ export default function App() {
                 }
               />
 
+              {/* Communication & Productivity Suite */}
+              <Route
+                path="/email"
+                element={
+                  <ProtectedRoute>
+                    <EmailPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/meetings"
+                element={
+                  <ProtectedRoute>
+                    <MeetingsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/calendar"
+                element={
+                  <ProtectedRoute>
+                    <CalendarPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Recruiter AI Copilot */}
+              <Route
+                path="/recruiter-ai"
+                element={
+                  <ProtectedRoute>
+                    <RecruiterAIPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* System Audit Log */}
+              <Route
+                path="/audit-log"
+                element={
+                  <ProtectedRoute>
+                    <AuditLogPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* System Settings & User Preferences */}
+              <Route
+                path="/settings"
+                element={
+                  <ProtectedRoute>
+                    <SettingsPage />
+                  </ProtectedRoute>
+                }
+              />
+
               {/* System Configuration & Master Data */}
               <Route
                 path="/admin"
@@ -312,14 +389,6 @@ export default function App() {
               />
               <Route
                 path="/admin/:tab"
-                element={
-                  <ProtectedRoute>
-                    <AdminConfigPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/settings"
                 element={
                   <ProtectedRoute>
                     <AdminConfigPage />

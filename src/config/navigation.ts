@@ -13,6 +13,11 @@ import {
   FileCheck2,
   Settings,
   ShieldCheck,
+  Mail,
+  Video,
+  Calendar,
+  Sparkles,
+  ClipboardList,
   LucideIcon
 } from 'lucide-react';
 import { UserRole } from '../types';
@@ -74,7 +79,14 @@ export const NAVIGATION_ITEMS: NavItem[] = [
   },
   // Phase 4: Round 1 AI Interview
   {
-    name: 'Round 1 AI Interview',
+    name: 'AI Interview',
+    href: '/ai-interview',
+    icon: Bot,
+    roles: ['Recruiter', 'Admin'],
+    badge: 'Orchestrator'
+  },
+  {
+    name: 'Round 1 Setup',
     href: '/interviews/round1/cand-001/setup',
     icon: Bot,
     roles: ['Recruiter', 'Admin', 'TeamManager'],
@@ -93,11 +105,52 @@ export const NAVIGATION_ITEMS: NavItem[] = [
     icon: Award,
     roles: ['HR', 'Recruiter', 'Admin']
   },
+  // Communication & Productivity Suite
+  {
+    name: 'Email',
+    href: '/email',
+    icon: Mail,
+    roles: ['Recruiter', 'TeamManager', 'Evaluator', 'HR', 'Admin', 'CRM']
+  },
+  {
+    name: 'Meetings',
+    href: '/meetings',
+    icon: Video,
+    roles: ['Recruiter', 'TeamManager', 'Evaluator', 'HR', 'Admin', 'CRM']
+  },
+  {
+    name: 'Calendar',
+    href: '/calendar',
+    icon: Calendar,
+    roles: ['Recruiter', 'TeamManager', 'Evaluator', 'HR', 'Admin', 'CRM']
+  },
+  // Recruiter AI Copilot (Only Recruiter and Team Manager)
+  {
+    name: 'Recruiter AI',
+    href: '/recruiter-ai',
+    icon: Sparkles,
+    roles: ['Recruiter', 'TeamManager'],
+    badge: 'Copilot'
+  },
+  // Audit Trail
+  {
+    name: 'Audit Log',
+    href: '/audit-log',
+    icon: ClipboardList,
+    roles: ['Admin', 'Recruiter', 'TeamManager', 'Evaluator', 'HR', 'CRM']
+  },
   // Admin Configuration
   {
     name: 'Admin & Integrations',
     href: '/admin/config',
-    icon: Settings,
+    icon: Sliders,
     roles: ['Admin']
+  },
+  // System Settings
+  {
+    name: 'Settings',
+    href: '/settings',
+    icon: Settings,
+    roles: ['Admin', 'CRM', 'TeamManager', 'Recruiter', 'Evaluator', 'HR']
   }
 ];

@@ -7,6 +7,7 @@ import {
   MapPin,
   Briefcase,
   Calendar,
+  CalendarCheck,
   FileText,
   PhoneCall,
   CheckCircle2,
@@ -17,7 +18,9 @@ import {
   ArrowRight,
   ShieldCheck,
   Send,
-  UserCheck
+  UserCheck,
+  Clock,
+  Play
 } from 'lucide-react';
 import { PageHeader } from '../components/common/PageHeader';
 import { StatusBadge } from '../components/common/StatusBadge';
@@ -29,7 +32,8 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { candidatesService } from '../api/candidates.service';
 import { screeningService } from '../api/screening.service';
-import { Candidate } from '../types';
+import { schedulingService } from '../api/scheduling.service';
+import { Candidate, AvailabilityCall, EvaluatorSlot } from '../types';
 
 export const CandidateProfilePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -38,16 +42,25 @@ export const CandidateProfilePage: React.FC = () => {
   const navigate = useNavigate();
 
   const [candidate, setCandidate] = useState<Candidate | null>(null);
+  const [availabilityCall, setAvailabilityCall] = useState<AvailabilityCall | null>(null);
+  const [bookedSlot, setBookedSlot] = useState<EvaluatorSlot | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'timeline' | 'documents' | 'screening' | 'round1' | 'decisions'>('timeline');
+  const [activeTab, setActiveTab] = useState<'timeline' | 'documents' | 'screening' | 'scheduling' | 'round1' | 'decisions'>('timeline');
 
   useEffect(() => {
     async function load() {
       if (!id) return;
       setIsLoading(true);
       try {
-        const c = await candidatesService.getById(id);
+        const [c, schedData] = await Promise.all([
+          candidatesService.getById(id),
+          schedulingService.getAvailabilityCall(id)
+        ]);
         setCandidate(c || null);
+        if (schedData) {
+          setAvailabilityCall(schedData.call);
+          setBookedSlot(schedData.bookedSlot);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -98,6 +111,35 @@ export const CandidateProfilePage: React.FC = () => {
                 <UserCheck className="w-4 h-4" />
                 <span>Manager Approval Queue</span>
               </Link>
+            )}
+
+            {candidate.status === 'Ceipal_Submitted' && (
+              <Link
+                to={`/scheduling?candidateId=${candidate.id}`}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-md active:scale-95"
+              >
+                <CalendarCheck className="w-4 h-4" />
+                <span>AI Schedule Interview</span>
+              </Link>
+            )}
+
+            {(candidate.status === 'Slot_Booked' || candidate.status === 'Round1_Setup_Pending') && (
+              <div className="flex items-center gap-2">
+                <Link
+                  to="/scheduling"
+                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors"
+                >
+                  <Calendar className="w-4 h-4 text-indigo-400" />
+                  <span>View Booked Slot</span>
+                </Link>
+                <Link
+                  to={`/interviews/round1/${candidate.id}/setup`}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-md active:scale-95"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>Configure Round 1 Setup</span>
+                </Link>
+              </div>
             )}
 
             {candidate.round1ReportId && (
@@ -202,6 +244,7 @@ export const CandidateProfilePage: React.FC = () => {
           { key: 'timeline', label: 'Detailed Milestones & Audit' },
           { key: 'documents', label: 'Documents & Resume' },
           { key: 'screening', label: 'Phase 2: Screening & RTR' },
+          { key: 'scheduling', label: 'Phase 3: AI Availability & Slots' },
           { key: 'round1', label: 'Phase 4: AI Interview Dossier' },
           { key: 'decisions', label: 'Phase 5: Human Decision Gate' }
         ].map((tab) => (
@@ -353,6 +396,125 @@ export const CandidateProfilePage: React.FC = () => {
               </span>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* TAB CONTENT: SCHEDULING & AVAILABILITY */}
+      {activeTab === 'scheduling' && (
+        <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+            <div>
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <CalendarCheck className="w-5 h-5 text-indigo-400" />
+                <span>Phase 3: AI Availability Telephony & Calendar Reservation</span>
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Autonomous voice telephony dialer records, candidate consent transcripts, and confirmed evaluator slots.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Link
+                to={`/scheduling?candidateId=${candidate.id}`}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-md active:scale-95"
+              >
+                <PhoneCall className="w-3.5 h-3.5" />
+                <span>Open AI Dialer Console</span>
+              </Link>
+            </div>
+          </div>
+
+          {bookedSlot || availabilityCall?.status === 'slot_selected' || candidate.status === 'Slot_Booked' ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 space-y-1">
+                  <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider block">
+                    Confirmed Timeslot
+                  </span>
+                  <div className="text-sm font-bold text-white flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-indigo-400" />
+                    <span>
+                      {bookedSlot
+                        ? `${new Date(bookedSlot.startTime).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })} at ${new Date(bookedSlot.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                        : availabilityCall?.chosenSlot || 'Thursday 2:00 PM EST'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 space-y-1">
+                  <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider block">
+                    Assigned Technical Evaluator
+                  </span>
+                  <div className="text-sm font-bold text-indigo-300">
+                    {bookedSlot?.evaluatorName || 'Dr. Aris Thorne'}
+                  </div>
+                  <div className="text-[11px] text-slate-400">
+                    {bookedSlot?.evaluatorRole || 'Principal Distributed Systems Architect'}
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 space-y-1">
+                  <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider block">
+                    Calendar & Reminders
+                  </span>
+                  <div className="text-xs font-semibold text-emerald-400 flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Google & Outlook Synced</span>
+                  </div>
+                  <div className="text-[11px] text-slate-400">
+                    Automated 24h & 4h alerts scheduled
+                  </div>
+                </div>
+              </div>
+
+              {availabilityCall?.candidateResponseAudioTranscript && (
+                <div className="p-4 rounded-xl bg-indigo-950/30 border border-indigo-500/30 space-y-2">
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-indigo-300 flex items-center gap-1.5">
+                    <Bot className="w-3.5 h-3.5" />
+                    <span>Candidate Telephony Audio Transcript</span>
+                  </div>
+                  <p className="text-xs text-slate-200 italic leading-relaxed">
+                    {availabilityCall.candidateResponseAudioTranscript}
+                  </p>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between pt-2">
+                <Link
+                  to={`/interviews/round1/${candidate.id}/setup`}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-md"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>Proceed to Phase 4: Configure AI Round 1 Setup</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+
+                <Link
+                  to={`/interviews/round1/${candidate.id}/live`}
+                  target="_blank"
+                  className="inline-flex items-center gap-1.5 text-xs text-slate-300 hover:text-white"
+                >
+                  <Play className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Preview Candidate Interview Console</span>
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="p-8 text-center border border-dashed border-slate-800 rounded-xl space-y-3">
+              <Calendar className="w-8 h-8 text-slate-500 mx-auto" />
+              <div className="text-sm font-bold text-white">No Interview Slot Confirmed Yet</div>
+              <p className="text-xs text-slate-400 max-w-md mx-auto">
+                Candidate is ready for Phase 3. Use the AI Availability Dialer to call the candidate and negotiate an open evaluator slot.
+              </p>
+              <Link
+                to={`/scheduling?candidateId=${candidate.id}`}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-md"
+              >
+                <PhoneCall className="w-4 h-4" />
+                <span>Launch AI Availability Call Now</span>
+              </Link>
+            </div>
+          )}
         </div>
       )}
 

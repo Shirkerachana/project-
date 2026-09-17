@@ -222,6 +222,26 @@ export const CandidatesListPage: React.FC = () => {
             </Link>
           )}
 
+          {c.status === 'Ceipal_Submitted' && (
+            <Link
+              to={`/scheduling?candidateId=${c.id}`}
+              className="px-2.5 py-1.5 rounded-lg bg-indigo-600/30 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/40 text-xs font-semibold transition-colors flex items-center gap-1"
+            >
+              <CalendarCheck className="w-3.5 h-3.5" />
+              <span>AI Schedule</span>
+            </Link>
+          )}
+
+          {(c.status === 'Slot_Booked' || c.status === 'Round1_Setup_Pending') && (
+            <Link
+              to={`/interviews/round1/${c.id}/setup`}
+              className="px-2.5 py-1.5 rounded-lg bg-emerald-600/30 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/40 text-xs font-semibold transition-colors flex items-center gap-1"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>R1 Setup</span>
+            </Link>
+          )}
+
           {c.round1ReportId && (
             <Link
               to={`/interviews/round1/${c.id}/report`}

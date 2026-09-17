@@ -233,13 +233,16 @@ export interface AvailabilityCall {
   candidateId: string;
   candidateName: string;
   phone: string;
-  status: 'idle' | 'calling' | 'analyzing' | 'slot_selected' | 'no_slot' | 'failed';
+  status: 'idle' | 'calling' | 'analyzing' | 'slot_selected' | 'no_slot' | 'failed' | 'completed';
   triggeredAt?: string;
+  calledAt?: string;
   candidateResponseAudioTranscript?: string;
+  callNotes?: string;
   detectedSlotId?: string;
   detectedSlotTime?: string;
   chosenSlot?: string;
   chosenTime?: string;
+  offeredSlots?: EvaluatorSlot[];
   scheduledDate?: string;
   callDurationSeconds?: number;
   callRecordingUrl?: string;
@@ -418,10 +421,17 @@ export interface BookedInterview {
   id: string;
   candidateId: string;
   candidateName: string;
+  candidateEmail?: string;
+  candidatePhone?: string;
   requirementTitle: string;
   evaluatorName: string;
+  evaluatorRole?: string;
+  slotStart: string;
+  slotEnd: string;
   scheduledTime: string;
   joinUrl: string;
+  joinLink?: string;
+  remindersSent: ReminderLog[];
   status: 'confirmed' | 'rescheduled' | 'cancelled';
 }
 
@@ -433,4 +443,147 @@ export interface SystemIntegrationStatus {
   lastSync: string;
   details?: string;
 }
+
+// ==========================================
+// FEATURE 1: EMAIL TYPES
+// ==========================================
+export type EmailFolderType = 'inbox' | 'important' | 'sent' | 'drafts' | 'followups';
+
+export interface EmailAttachment {
+  id: string;
+  name: string;
+  sizeBytes: number;
+  type: string;
+}
+
+export interface EmailMessage {
+  id: string;
+  sender: {
+    name: string;
+    email: string;
+    avatar?: string;
+  };
+  recipients: string[];
+  cc?: string[];
+  bcc?: string[];
+  subject: string;
+  body: string;
+  timestamp: string;
+  folder: EmailFolderType;
+  isRead: boolean;
+  isImportant: boolean;
+  isAiGenerated?: boolean;
+  relatedCandidateId?: string;
+  relatedCandidateName?: string;
+  relatedInterviewId?: string;
+  interviewJoinLink?: string;
+  attachments?: EmailAttachment[];
+  status?: 'draft' | 'sent' | 'failed' | 'delivered';
+}
+
+// ==========================================
+// FEATURE 2: MEETINGS TYPES
+// ==========================================
+export type MeetingType = 'round1_ai_interview' | 'round2_evaluator_panel' | 'recruiting_sync' | 'candidate_debrief';
+
+export interface MeetingParticipant {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  avatar?: string;
+  isCandidate?: boolean;
+  isAiAgent?: boolean;
+  isObserver?: boolean;
+  status: 'accepted' | 'tentative' | 'declined' | 'pending';
+}
+
+export interface MeetingItem {
+  id: string;
+  title: string;
+  type: MeetingType;
+  date: string; // YYYY-MM-DD
+  startTime: string; // HH:mm
+  endTime: string; // HH:mm
+  durationMinutes: number;
+  description: string;
+  joinLink: string;
+  status: 'upcoming' | 'in_progress' | 'completed' | 'cancelled';
+  invitationStatus: 'sent' | 'accepted' | 'declined' | 'pending';
+  participants: MeetingParticipant[];
+  relatedCandidateId?: string;
+  relatedCandidateName?: string;
+  relatedRequirementTitle?: string;
+  relatedInterviewId?: string;
+  recordingUrl?: string;
+  notes?: string;
+}
+
+// ==========================================
+// FEATURE 3: CALENDAR TYPES
+// ==========================================
+export interface CalendarEventItem {
+  id: string;
+  title: string;
+  startDate: string; // ISO date string or YYYY-MM-DDTHH:mm
+  endDate: string;
+  allDay?: boolean;
+  type: 'ai_interview' | 'round2_interview' | 'meeting' | 'debrief';
+  candidateId?: string;
+  candidateName?: string;
+  roleTitle?: string;
+  joinLink?: string;
+  meetingId?: string;
+  interviewId?: string;
+  color?: string;
+  description?: string;
+  location?: string;
+}
+
+// ==========================================
+// FEATURE 6: AUDIT LOG TYPES
+// ==========================================
+export type AuditSeverity = 'info' | 'warning' | 'critical';
+
+export interface AuditLogRecord {
+  id: string;
+  timestamp: string;
+  actor: {
+    id: string;
+    name: string;
+    email: string;
+    role: UserRole;
+  };
+  action: string;
+  entityType: 'Interview' | 'Meeting' | 'Email' | 'Candidate' | 'Decision' | 'Evaluation' | 'System';
+  entityId: string;
+  entityName?: string;
+  status: 'SUCCESS' | 'FAILED' | 'WARNING' | 'PENDING';
+  severity: AuditSeverity;
+  details: string;
+  relatedInterviewId?: string;
+  relatedMeetingId?: string;
+  relatedEmailId?: string;
+  relatedCandidateId?: string;
+  ipAddress?: string;
+}
+
+// ==========================================
+// FEATURE 7: RECRUITER AI CHAT TYPES
+// ==========================================
+export interface RecruiterAIChatMessage {
+  id: string;
+  sender: 'user' | 'assistant';
+  text: string;
+  timestamp: string;
+  contextCandidateId?: string;
+  contextCandidateName?: string;
+  isAiGenerated: boolean;
+  suggestedPrompts?: string[];
+  actionLinks?: {
+    label: string;
+    url: string;
+  }[];
+}
+
 

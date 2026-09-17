@@ -208,6 +208,10 @@ export const candidateService = {
     });
   },
 
+  async updateStatus(id: string, status: any) {
+    return this.updateCandidate(id, { status });
+  },
+
   getAll(filters?: any) {
     return this.getCandidates(filters);
   },
