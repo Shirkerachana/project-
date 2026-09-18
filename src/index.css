@@ -144,8 +144,8 @@ html.bright select:focus {
 
 /* Modals & Dialog Backdrops */
 html.bright .bg-slate-900.border.border-slate-800,
-html.bright [role="dialog"],
-html.bright .shadow-2xl {
+html.bright [role="dialog"]:not(.tp-modal-overlay),
+html.bright .shadow-2xl:not(.tp-modal-overlay) {
   background-color: #ffffff !important;
   border-color: #e2e8f0 !important;
   box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1) !important;
@@ -315,6 +315,20 @@ html.bright svg circle[class*="stroke-sky-950"] {
   stroke: #e2e8f0 !important;
 }
 
+/* Popup overlays: keep dim + blur in both themes (do not flatten to solid white) */
+.tp-modal-overlay {
+  background-color: rgba(15, 23, 42, 0.42) !important;
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  box-shadow: none !important;
+}
+html.bright .tp-modal-overlay {
+  background-color: rgba(15, 23, 42, 0.28) !important;
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  box-shadow: none !important;
+}
+
 /* Smooth transition for theme switching */
 html,
 body,
@@ -379,3 +393,14 @@ button {
 #interview-workspace-page .field-wrap select,
 #interview-workspace-page .field-wrap textarea { display: block; box-sizing: border-box; width: 100%; margin-top: 0.375rem; border: 1px solid #334155; border-radius: 0.75rem; background: #020617; color: white; padding: 0.625rem 0.75rem; font-size: 0.75rem; }
 #interview-workspace-page .round-card { display: flex; align-items: center; gap: 0.5rem; border: 1px solid #1e293b; border-radius: 0.75rem; background: #020617; padding: 0.875rem; color: #cbd5e1; font-size: 0.75rem; font-weight: 600; }
+
+html.bright .gmail-compose-header,
+html.bright .gmail-compose-header * {
+  color: #ffffff !important;
+  background-color: #404040 !important;
+}
+html.bright .gmail-app .gmail-send,
+html.bright .gmail-app .gmail-send *,
+html.bright .gmail-app .gmail-avatar {
+  color: #ffffff !important;
+}

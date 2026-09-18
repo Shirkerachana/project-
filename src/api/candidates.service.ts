@@ -188,7 +188,7 @@ export const candidateService = {
       const items = getPersistentState<Candidate[]>(CANDIDATES_KEY, INITIAL_CANDIDATES);
       const callIds: string[] = [];
 
-      candidateIds.slice(0, 5).forEach((id) => {
+      candidateIds.forEach((id) => {
         const index = items.findIndex((c) => c.id === id);
         if (index !== -1) {
           const callId = `call-${Date.now()}-${Math.floor(Math.random() * 1000)}`;

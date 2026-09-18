@@ -1,20 +1,20 @@
 import { EmailFolderType, EmailMessage, UserRole } from '../types';
 import { auditService } from './audit.service';
 
-const STORAGE_KEY = 'tp_emails';
+const STORAGE_KEY = 'tp_emails_gmail_v1';
+
+const hoursAgo = (hours: number) => new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
+const daysAgo = (days: number) => new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
 const INITIAL_EMAILS: EmailMessage[] = [
   {
     id: 'email-001',
-    sender: {
-      name: 'TalentPulse AI Scheduler',
-      email: 'scheduling@talentpulse.internal'
-    },
+    sender: { name: 'TalentPulse AI Scheduler', email: 'scheduling@talentpulse.internal' },
     recipients: ['alex.rivera@example.com'],
     cc: ['david.miller@talentpulse.internal'],
     subject: 'Official Invitation: AI Technical Interview - Lead Cloud Architect',
-    body: `Dear Alex Rivera,\n\nCongratulations on being shortlisted for the Lead Cloud Architect position at TalentPulse Systems.\n\nYour Round 1 Technical Interview has been scheduled with our AI Technical Interviewer (Eva).\n\nInterview Details:\n- Date: Tomorrow\n- Time: 10:00 AM EST\n- Duration: 45 Minutes\n- Structure: 4 Technical Architecture & Distributed Systems Scenarios\n\nSecure Candidate Join Link:\n${window.location.origin}/interview/session-alex-rivera-9821\n\nImportant Instructions & Consent Notice:\n1. Please ensure your webcam and microphone are connected and tested before entering the session.\n2. In accordance with hiring compliance, this session will be recorded and transcribed by automated AI systems for evaluation by our engineering panel.\n3. The session must be conducted in full screen. Tab switches or external focus shifts are monitored by proctoring sensors.\n\nWe wish you the very best of luck.\n\nWarm regards,\nTalent Acquisition Team\nTalentPulse Enterprise`,
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 18).toISOString(),
+    body: `Dear Alex Rivera,\n\nCongratulations on being shortlisted for the Lead Cloud Architect position at TalentPulse Systems.\n\nYour Round 1 Technical Interview has been scheduled with our AI Technical Interviewer (Eva).\n\nInterview Details:\n- Date: Tomorrow\n- Time: 10:00 AM EST\n- Duration: 45 Minutes\n\nSecure Candidate Join Link:\n${typeof window !== 'undefined' ? window.location.origin : ''}/interview/session-alex-rivera-9821\n\nWarm regards,\nTalent Acquisition Team`,
+    timestamp: hoursAgo(18),
     folder: 'sent',
     isRead: true,
     isImportant: true,
@@ -22,73 +22,126 @@ const INITIAL_EMAILS: EmailMessage[] = [
     relatedCandidateId: 'cand-001',
     relatedCandidateName: 'Alex Rivera',
     relatedInterviewId: 'ai-inv-001',
-    interviewJoinLink: `${window.location.origin}/interview/session-alex-rivera-9821`,
-    status: 'delivered'
+    interviewJoinLink: `${typeof window !== 'undefined' ? window.location.origin : ''}/interview/session-alex-rivera-9821`,
+    status: 'delivered',
+    category: 'primary'
   },
   {
     id: 'email-002',
-    sender: {
-      name: 'Dr. Aris Thorne',
-      email: 'aris.thorne@techpartners.internal'
-    },
+    sender: { name: 'Dr. Aris Thorne', email: 'aris.thorne@techpartners.internal' },
     recipients: ['david.miller@talentpulse.internal'],
     subject: 'Evaluator Feedback Ready: Round 2 Panel for Alex Rivera',
-    body: `Hi David,\n\nI have completed the Round 2 Technical Architecture evaluation for Alex Rivera. Alex demonstrated deep knowledge of distributed transaction boundaries and zero-downtime canary deployments. \n\nI have submitted my official evaluation with a rating of 4.8 / 5.0 (Strong Hire recommendation). You can view the complete assessment directly in the candidate profile.\n\nBest,\nDr. Aris Thorne\nPrincipal Distributed Systems Architect`,
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 4).toISOString(),
+    body: `Hi David,\n\nI have completed the Round 2 Technical Architecture evaluation for Alex Rivera. Alex demonstrated deep knowledge of distributed transaction boundaries and zero-downtime canary deployments.\n\nI have submitted my official evaluation with a rating of 4.8 / 5.0 (Strong Hire recommendation).\n\nBest,\nDr. Aris Thorne`,
+    timestamp: hoursAgo(4),
     folder: 'inbox',
     isRead: false,
     isImportant: true,
     isAiGenerated: false,
     relatedCandidateId: 'cand-001',
-    relatedCandidateName: 'Alex Rivera'
+    relatedCandidateName: 'Alex Rivera',
+    category: 'primary'
   },
   {
     id: 'email-003',
-    sender: {
-      name: 'Elena Vance (Admin)',
-      email: 'elena.vance@talentpulse.internal'
-    },
+    sender: { name: 'Elena Vance (Admin)', email: 'elena.vance@talentpulse.internal' },
     recipients: ['all-talent-team@talentpulse.internal'],
     subject: 'System Update: WebRTC & AI Avatar Voice Transcription Engine Upgraded',
-    body: `Team,\n\nPlease note that the WebRTC streaming media cluster and real-time Whisper transcription pipelines have been updated to v3.4. Video latency is reduced to sub-80ms for candidate avatar interviews.\n\nAll existing scheduling links and proctoring telemetry remain fully backwards compatible.\n\nBest regards,\nElena Vance\nGlobal Systems Administrator`,
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 36).toISOString(),
+    body: `Team,\n\nPlease note that the WebRTC streaming media cluster and real-time Whisper transcription pipelines have been updated to v3.4. Video latency is reduced to sub-80ms for candidate avatar interviews.\n\nBest regards,\nElena Vance`,
+    timestamp: hoursAgo(36),
     folder: 'inbox',
     isRead: true,
     isImportant: false,
-    isAiGenerated: false
+    isAiGenerated: false,
+    category: 'updates'
   },
   {
     id: 'email-004',
-    sender: {
-      name: 'David Miller',
-      email: 'david.miller@talentpulse.internal'
-    },
+    sender: { name: 'David Miller', email: 'david.miller@talentpulse.internal' },
     recipients: ['jordan.lee@example.com'],
     subject: 'Draft: Preparation Guidelines for Staff Data Engineer AI Interview',
-    body: `Hi Jordan,\n\nHere are some helpful pointers before your upcoming technical interview session. The AI Interviewer will present practical system scenarios regarding Apache Spark streaming, Iceberg table optimization, and backpressure handling.\n\nFeel free to reach out if you have any questions.`,
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 8).toISOString(),
+    body: `Hi Jordan,\n\nHere are some helpful pointers before your upcoming technical interview session.`,
+    timestamp: hoursAgo(8),
     folder: 'drafts',
     isRead: true,
     isImportant: false,
     isAiGenerated: true,
     status: 'draft',
     relatedCandidateId: 'cand-002',
-    relatedCandidateName: 'Jordan Lee'
+    relatedCandidateName: 'Jordan Lee',
+    category: 'primary'
   },
   {
     id: 'email-005',
-    sender: {
-      name: 'Sarah Jenkins (Manager)',
-      email: 'sarah.jenkins@talentpulse.internal'
-    },
+    sender: { name: 'Sarah Jenkins (Manager)', email: 'sarah.jenkins@talentpulse.internal' },
     recipients: ['david.miller@talentpulse.internal'],
     subject: 'Follow-up: Client Review on Senior React Specialist Shortlist',
     body: `David,\n\nClient has reviewed candidate profiles for REQ-2024-003 and is very keen to expedite the AI Interview stage. Please ensure candidates receive their scheduling invitations by end of day today.\n\nThanks,\nSarah`,
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(),
+    timestamp: hoursAgo(12),
     folder: 'followups',
     isRead: false,
     isImportant: true,
-    isAiGenerated: false
+    isAiGenerated: false,
+    category: 'primary'
+  },
+  {
+    id: 'email-006',
+    sender: { name: 'ChatGPT', email: 'noreply@openai.com' },
+    recipients: ['david.miller@talentpulse.internal'],
+    subject: 'Look what you can do now',
+    body: 'Fresh ways to create, think out loud, and explore what\'s possible. We\'ve been busy. Here\'s what\'s new.',
+    timestamp: daysAgo(1),
+    folder: 'inbox',
+    isRead: true,
+    isImportant: false,
+    category: 'updates'
+  },
+  {
+    id: 'email-007',
+    sender: { name: 'Dribbble', email: 'hello@dribbble.com' },
+    recipients: ['david.miller@talentpulse.internal'],
+    subject: 'The real design brief is not on paper',
+    body: 'Golf brand case study, rebranding lessons, and enterprise AI UX strategies.',
+    timestamp: daysAgo(1),
+    folder: 'inbox',
+    isRead: true,
+    isImportant: false,
+    category: 'promotions'
+  },
+  {
+    id: 'email-008',
+    sender: { name: 'Google', email: 'noreply@google.com' },
+    recipients: ['david.miller@talentpulse.internal'],
+    subject: 'You shared some Google Account data with Claude',
+    body: 'Keep track of your Google Account data. You\'re receiving this email because you used Sign in with Google.',
+    timestamp: daysAgo(2),
+    folder: 'inbox',
+    isRead: true,
+    isImportant: false,
+    category: 'updates'
+  },
+  {
+    id: 'email-009',
+    sender: { name: 'Claude Team', email: 'team@anthropic.com' },
+    recipients: ['david.miller@talentpulse.internal'],
+    subject: 'Add credits to start building on the Claude Platform',
+    body: 'You\'re just a few steps away from your first integration.',
+    timestamp: daysAgo(6),
+    folder: 'inbox',
+    isRead: true,
+    isImportant: false,
+    category: 'updates'
+  },
+  {
+    id: 'email-010',
+    sender: { name: 'The Postman Team', email: 'hello@postman.com' },
+    recipients: ['david.miller@talentpulse.internal'],
+    subject: 'Your API work can live alongside your code',
+    body: 'Branch, commit, and version your collections the same way you handle everything else.',
+    timestamp: daysAgo(14),
+    folder: 'inbox',
+    isRead: true,
+    isImportant: false,
+    category: 'social'
   }
 ];
 

@@ -4,26 +4,38 @@ import {
   Mail,
   Sparkles,
   Send,
-  CheckCircle2,
-  AlertCircle,
-  Clock,
-  FileCheck2,
-  ArrowRight,
-  ShieldCheck,
-  Edit3
+  Clock
 } from 'lucide-react';
 import { PageHeader } from '../components/common/PageHeader';
 import { AIBadge } from '../components/common/AIBadge';
 import { LoadingState } from '../components/common/LoadingState';
 import { ConfirmationDialog } from '../components/common/ConfirmationDialog';
+import { DynamicFieldsEditor, DynamicField } from '../components/common/DynamicFieldsEditor';
 import { screeningService } from '../api/screening.service';
 import { candidatesService } from '../api/candidates.service';
 import { useToast } from '../context/ToastContext';
 import { RTREmail, Candidate } from '../types';
 
+const buildRtrFields = (draft: RTREmail): DynamicField[] => {
+  const defaults: DynamicField[] = [
+    { id: 'candidateName', label: 'Candidate Full Name', value: draft.candidateName || '', removable: true },
+    { id: 'candidateEmail', label: 'Candidate Email', value: draft.candidateEmail || '', type: 'email', removable: true },
+    { id: 'positionTitle', label: 'Position Title', value: draft.positionTitle || draft.requirementTitle || '', removable: true },
+    { id: 'clientName', label: 'Client Organization', value: draft.clientName || '', removable: true },
+    { id: 'proposedCompensation', label: 'Proposed Compensation / Bill Rate', value: draft.proposedCompensation || draft.hourlyRateOrSalary || '', removable: true },
+    { id: 'sponsoringEmployer', label: 'Sponsoring Recruitment Agency', value: draft.sponsoringEmployer || 'TalentPulse', removable: true }
+  ];
+  const extras = (draft.customFields || []).map((field) => ({
+    id: field.id,
+    label: field.label,
+    value: field.value,
+    removable: true
+  }));
+  return [...defaults, ...extras];
+};
+
 export const RTREmailReviewPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const toast = useToast();
 
   const [draft, setDraft] = useState<RTREmail | null>(null);
@@ -31,15 +43,7 @@ export const RTREmailReviewPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
-  const [isSimulatingAck, setIsSimulatingAck] = useState(false);
-
-  // Editable Draft Fields
-  const [candidateName, setCandidateName] = useState('');
-  const [candidateEmail, setCandidateEmail] = useState('');
-  const [positionTitle, setPositionTitle] = useState('');
-  const [clientName, setClientName] = useState('');
-  const [proposedCompensation, setProposedCompensation] = useState('');
-  const [sponsoringEmployer, setSponsoringEmployer] = useState('');
+  const [fields, setFields] = useState<DynamicField[]>([]);
   const [bodyText, setBodyText] = useState('');
 
   useEffect(() => {
@@ -50,15 +54,8 @@ export const RTREmailReviewPage: React.FC = () => {
         const d = await screeningService.getRTRDraft(id);
         if (d) {
           setDraft(d);
-          setCandidateName(d.candidateName);
-          setCandidateEmail(d.candidateEmail);
-          setPositionTitle(d.positionTitle);
-          setClientName(d.clientName);
-          setProposedCompensation(d.proposedCompensation);
-          setSponsoringEmployer(d.sponsoringEmployer);
+          setFields(buildRtrFields(d));
           setBodyText(d.bodyText);
-
-          // Get candidate
           const c = await candidatesService.getById(d.candidateId);
           setCandidate(c || null);
         }
@@ -72,29 +69,36 @@ export const RTREmailReviewPage: React.FC = () => {
   if (isLoading) return <LoadingState message="Loading AI RTR draft..." variant="spinner" />;
   if (!draft) return <div className="p-8 text-center text-slate-400">RTR Draft not found for this call.</div>;
 
+  const getValue = (fieldId: string) => fields.find((f) => f.id === fieldId)?.value || '';
+  const candidateName = getValue('candidateName') || draft.candidateName;
+  const candidateEmail = getValue('candidateEmail') || draft.candidateEmail;
+  const positionTitle = getValue('positionTitle') || draft.requirementTitle;
+  const clientName = getValue('clientName') || draft.clientName;
+  const isAcknowledged = draft.status === 'acknowledged' || candidate?.rtrAcknowledged;
+
   const handleSendRTR = async () => {
     setIsSending(true);
     try {
+      const customFields = fields
+        .filter((f) => !['candidateName', 'candidateEmail', 'positionTitle', 'clientName', 'proposedCompensation', 'sponsoringEmployer'].includes(f.id))
+        .map((f) => ({ id: f.id, label: f.label, value: f.value }));
+
       const updated = await screeningService.sendRTR(draft.id, {
         candidateName,
         candidateEmail,
         positionTitle,
         clientName,
-        proposedCompensation,
-        sponsoringEmployer,
+        proposedCompensation: getValue('proposedCompensation'),
+        sponsoringEmployer: getValue('sponsoringEmployer'),
+        customFields,
         bodyText
       });
       setDraft(updated);
       toast.success(
         'RTR Authorization Email Sent',
-        `Right-to-Represent document dispatched to ${candidateEmail}. Candidate acknowledgement is required to advance.`
+        `Right-to-Represent document dispatched to ${candidateEmail}.`
       );
       setIsConfirmModalOpen(false);
-
-      if (candidate) {
-        const c = await candidatesService.getById(candidate.id);
-        setCandidate(c || null);
-      }
     } catch (err: any) {
       toast.error('Send Error', err.message);
     } finally {
@@ -102,31 +106,8 @@ export const RTREmailReviewPage: React.FC = () => {
     }
   };
 
-  // Simulate Candidate Digital Acknowledgement
-  const handleSimulateCandidateAcknowledge = async () => {
-    if (!candidate) return;
-    setIsSimulatingAck(true);
-    try {
-      const updated = await screeningService.recordRTRAcknowledgement(candidate.id, draft.id);
-      setCandidate(updated);
-      toast.success(
-        'RTR Acknowledged by Candidate',
-        'Candidate has digitally signed the Right-to-Represent authorization. Profile is now forwarded to Team Manager Approval Queue.'
-      );
-      if (draft) {
-        setDraft({ ...draft, status: 'acknowledged', acknowledgedAt: new Date().toISOString() });
-      }
-    } catch (err: any) {
-      toast.error('Acknowledgement Error', err.message);
-    } finally {
-      setIsSimulatingAck(false);
-    }
-  };
-
-  const isAcknowledged = draft.status === 'acknowledged' || candidate?.rtrAcknowledged;
-
   return (
-    <div id="rtr-email-review-page" className="max-w-5xl mx-auto space-y-6">
+    <div id="rtr-email-review-page" className="space-y-6">
       <PageHeader
         title={`Review Right-to-Represent (RTR): ${candidateName}`}
         description="Phase 2: Review and edit the AI-drafted RTR authorization email before sending to candidate."
@@ -138,67 +119,34 @@ export const RTREmailReviewPage: React.FC = () => {
         badge={<AIBadge label="AI Pre-Drafted Email" />}
       />
 
-      {/* Critical Workflow Gate Banner */}
-      <div
-        className={`p-5 rounded-2xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${
-          isAcknowledged
-            ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-200'
-            : draft.status === 'sent'
-            ? 'bg-amber-950/30 border-amber-500/40 text-amber-200'
-            : 'bg-indigo-950/30 border-indigo-500/40 text-indigo-200'
-        }`}
-      >
-        <div className="flex items-start gap-3">
-          {isAcknowledged ? (
-            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-          ) : draft.status === 'sent' ? (
-            <Clock className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-          ) : (
-            <Sparkles className="w-5 h-5 text-indigo-400 shrink-0 mt-0.5" />
-          )}
-
-          <div>
-            <div className="font-bold text-sm flex items-center gap-2">
-              <span>RTR Workflow Gate Status:</span>
-              <span className="uppercase font-mono tracking-wider font-extrabold">
-                {isAcknowledged ? 'Authorized & Signed' : draft.status === 'sent' ? 'Awaiting Candidate Click' : 'Draft Ready for Review'}
-              </span>
+      {!isAcknowledged && (
+        <div
+          className={`p-5 rounded-2xl border ${
+            draft.status === 'sent'
+              ? 'bg-amber-950/30 border-amber-500/40 text-amber-200'
+              : 'bg-indigo-950/30 border-indigo-500/40 text-indigo-200'
+          }`}
+        >
+          <div className="flex items-start gap-3">
+            {draft.status === 'sent' ? (
+              <Clock className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+            ) : (
+              <Sparkles className="w-5 h-5 text-indigo-400 shrink-0 mt-0.5" />
+            )}
+            <div>
+              <div className="font-bold text-sm uppercase font-mono tracking-wider">
+                {draft.status === 'sent' ? 'Awaiting Candidate Click' : 'Draft Ready for Review'}
+              </div>
+              <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                {draft.status === 'sent'
+                  ? 'Email dispatched with a secure digital signature link.'
+                  : 'AI extracted the salary expectations and position title from the screening conversation. Review terms below and send.'}
+              </p>
             </div>
-            <p className="text-xs text-slate-300 mt-1 leading-relaxed max-w-2xl">
-              {isAcknowledged
-                ? 'Candidate has granted exclusive Right to Represent. Candidate profile has been forwarded to the Team Manager Approval Queue.'
-                : draft.status === 'sent'
-                ? 'Email dispatched with secure digital signature link. Candidate must acknowledge before Team Manager can approve for Ceipal.'
-                : 'AI extracted the salary expectations and position title from the screening conversation. Review terms below and send.'}
-            </p>
           </div>
         </div>
+      )}
 
-        {/* Demo Fast-Track Button: Allows reviewer to simulate the candidate's click immediately */}
-        {draft.status === 'sent' && !isAcknowledged && (
-          <button
-            type="button"
-            onClick={handleSimulateCandidateAcknowledge}
-            disabled={isSimulatingAck}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md active:scale-95 shrink-0"
-          >
-            <CheckCircle2 className="w-4 h-4" />
-            <span>{isSimulatingAck ? 'Signing...' : 'Simulate Candidate RTR Acknowledge'}</span>
-          </button>
-        )}
-
-        {isAcknowledged && (
-          <Link
-            to="/approvals"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-md shrink-0"
-          >
-            <span>Proceed to Team Manager Approvals</span>
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        )}
-      </div>
-
-      {/* Editable RTR Email Card */}
       <div className="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl space-y-6">
         <div className="flex items-center justify-between border-b border-slate-800 pb-4">
           <div className="flex items-center gap-2.5">
@@ -211,84 +159,16 @@ export const RTREmailReviewPage: React.FC = () => {
                 <AIBadge label="AI Formatted" />
               </h3>
               <p className="text-xs text-slate-400 mt-0.5">
-                Ensure legal accuracy before transmission. All terms below are binding upon candidate click.
+                Add or remove terms as needed before transmission.
               </p>
             </div>
           </div>
         </div>
 
-        {/* Structured Terms Form */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="text-xs font-semibold text-slate-300 block mb-1.5">Candidate Full Name</label>
-            <input
-              type="text"
-              value={candidateName}
-              onChange={(e) => setCandidateName(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-            />
-          </div>
+        <DynamicFieldsEditor fields={fields} onChange={setFields} addLabel="Add RTR Field" />
 
-          <div>
-            <label className="text-xs font-semibold text-slate-300 block mb-1.5">Candidate Email</label>
-            <input
-              type="email"
-              value={candidateEmail}
-              onChange={(e) => setCandidateEmail(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-            />
-          </div>
-
-          <div>
-            <label className="text-xs font-semibold text-slate-300 block mb-1.5">Position Title</label>
-            <input
-              type="text"
-              value={positionTitle}
-              onChange={(e) => setPositionTitle(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-            />
-          </div>
-
-          <div>
-            <label className="text-xs font-semibold text-slate-300 block mb-1.5">Client Organization</label>
-            <input
-              type="text"
-              value={clientName}
-              onChange={(e) => setClientName(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-            />
-          </div>
-
-          <div>
-            <label className="text-xs font-semibold text-slate-300 block mb-1.5">
-              Proposed Compensation / Bill Rate
-            </label>
-            <input
-              type="text"
-              value={proposedCompensation}
-              onChange={(e) => setProposedCompensation(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-            />
-          </div>
-
-          <div>
-            <label className="text-xs font-semibold text-slate-300 block mb-1.5">
-              Sponsoring Recruitment Agency
-            </label>
-            <input
-              type="text"
-              value={sponsoringEmployer}
-              onChange={(e) => setSponsoringEmployer(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-            />
-          </div>
-        </div>
-
-        {/* Email Body */}
         <div>
-          <label className="text-xs font-semibold text-slate-300 block mb-1.5">
-            Email Body Content
-          </label>
+          <label className="text-xs font-semibold text-slate-300 block mb-1.5">Email Body Content</label>
           <textarea
             rows={8}
             value={bodyText}
@@ -297,7 +177,6 @@ export const RTREmailReviewPage: React.FC = () => {
           />
         </div>
 
-        {/* Transmission Controls */}
         <div className="flex items-center justify-between pt-4 border-t border-slate-800">
           <Link
             to={`/screening/calls/${id}`}
@@ -306,33 +185,30 @@ export const RTREmailReviewPage: React.FC = () => {
             Back to Call Recording
           </Link>
 
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setIsConfirmModalOpen(true)}
-              disabled={isSending || isAcknowledged}
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-md active:scale-95 disabled:opacity-40"
-            >
-              <Send className="w-4 h-4" />
-              <span>
-                {isAcknowledged
-                  ? 'RTR Already Signed'
-                  : draft.status === 'sent'
-                  ? 'Re-send RTR Authorization'
-                  : 'Send RTR Authorization to Candidate'}
-              </span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setIsConfirmModalOpen(true)}
+            disabled={isSending || isAcknowledged}
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold disabled:opacity-40"
+          >
+            <Send className="w-4 h-4" />
+            <span>
+              {isAcknowledged
+                ? 'RTR Already Signed'
+                : draft.status === 'sent'
+                ? 'Re-send RTR Authorization'
+                : 'Send RTR Authorization to Candidate'}
+            </span>
+          </button>
         </div>
       </div>
 
-      {/* Confirmation Dialog */}
       <ConfirmationDialog
         isOpen={isConfirmModalOpen}
         onClose={() => setIsConfirmModalOpen(false)}
         onConfirm={handleSendRTR}
         title="Send Right-to-Represent Email"
-        message={`Send binding Right-to-Represent email to ${candidateEmail} for role "${positionTitle}" at "${clientName}". The workflow will await the candidate's digital confirmation.`}
+        message={`Send binding Right-to-Represent email to ${candidateEmail} for role "${positionTitle}" at "${clientName}".`}
         confirmLabel="Send Email Now"
         isLoading={isSending}
       />

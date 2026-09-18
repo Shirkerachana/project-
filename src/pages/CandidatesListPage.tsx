@@ -20,6 +20,8 @@ import { StatusBadge } from '../components/common/StatusBadge';
 import { AIBadge } from '../components/common/AIBadge';
 import { DataTable, Column } from '../components/common/DataTable';
 import { ConfirmationDialog } from '../components/common/ConfirmationDialog';
+import { Modal } from '../components/common/Modal';
+import { CandidateAddForm } from './CandidateAddPage';
 import { candidatesService } from '../api/candidates.service';
 import { screeningService } from '../api/screening.service';
 import { Candidate, CandidateWorkflowStage } from '../types';
@@ -35,6 +37,7 @@ export const CandidatesListPage: React.FC = () => {
   const [selectedCandidateIds, setSelectedCandidateIds] = useState<string[]>([]);
   const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
   const [isDispatchingBatch, setIsDispatchingBatch] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   useEffect(() => {
     loadCandidates();
@@ -54,21 +57,12 @@ export const CandidatesListPage: React.FC = () => {
     if (selectedCandidateIds.includes(id)) {
       setSelectedCandidateIds(selectedCandidateIds.filter((item) => item !== id));
     } else {
-      if (selectedCandidateIds.length >= 5) {
-        toast.warning('Maximum 5 Candidates', 'Batch screening calls are restricted to a maximum of 5 candidates at a time.');
-        return;
-      }
       setSelectedCandidateIds([...selectedCandidateIds, id]);
     }
   };
 
   const handleSelectAll = (ids: string[]) => {
-    if (ids.length > 5) {
-      toast.warning('Batch Limit Enforced', 'Selected the first 5 candidates. Batch screening is capped at 5.');
-      setSelectedCandidateIds(ids.slice(0, 5));
-    } else {
-      setSelectedCandidateIds(ids);
-    }
+    setSelectedCandidateIds(ids);
   };
 
   const handleDispatchBatchScreening = async () => {
@@ -212,16 +206,6 @@ export const CandidatesListPage: React.FC = () => {
             </button>
           )}
 
-          {c.status === 'RTR_Pending' && (
-            <Link
-              to={`/screening/calls/${c.screeningCallId || 'sc-001'}/rtr`}
-              className="px-2.5 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-slate-950 border border-amber-500/40 text-xs font-semibold transition-colors flex items-center gap-1"
-            >
-              <Mail className="w-3.5 h-3.5" />
-              <span>Review RTR</span>
-            </Link>
-          )}
-
           {c.status === 'Ceipal_Submitted' && (
             <Link
               to={`/scheduling?candidateId=${c.id}`}
@@ -270,13 +254,14 @@ export const CandidatesListPage: React.FC = () => {
         description="Search, filter, and track candidates across the 5 automated & human-gated phases."
         actions={
           <div className="flex items-center gap-3">
-            <Link
-              to="/candidates/new"
+            <button
+              type="button"
+              onClick={() => setIsAddModalOpen(true)}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-md active:scale-95"
             >
               <UserPlus className="w-4 h-4" />
-              <span>Add Candidate (AI Resume Parse)</span>
-            </Link>
+              <span>Add Candidate</span>
+            </button>
           </div>
         }
       />
@@ -317,9 +302,6 @@ export const CandidatesListPage: React.FC = () => {
             <div>
               <span className="text-sm font-bold text-white">
                 {selectedCandidateIds.length} candidate(s) selected
-              </span>
-              <span className="text-xs text-indigo-300 ml-2">
-                (Batch screening call capacity: maximum 5 candidates)
               </span>
             </div>
           </div>
@@ -373,6 +355,23 @@ export const CandidatesListPage: React.FC = () => {
         confirmLabel={`Dispatch ${selectedCandidateIds.length} AI Call(s)`}
         isLoading={isDispatchingBatch}
       />
+
+      <Modal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        title="Add Candidate"
+        subtitle="Fill candidate details here. Attributes can be added or removed."
+        maxWidth="4xl"
+      >
+        <CandidateAddForm
+          compact
+          onCancel={() => setIsAddModalOpen(false)}
+          onSaved={() => {
+            setIsAddModalOpen(false);
+            loadCandidates();
+          }}
+        />
+      </Modal>
     </div>
   );
 };

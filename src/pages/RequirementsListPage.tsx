@@ -6,16 +6,19 @@ import { PageHeader } from '../components/common/PageHeader';
 import { StatusBadge } from '../components/common/StatusBadge';
 import { DataTable, Column } from '../components/common/DataTable';
 import { requirementsService } from '../api/requirements.service';
-import { Requirement, RequirementStatus } from '../types';
+import { authService } from '../api/auth.service';
+import { Requirement, RequirementStatus, User } from '../types';
 
 export const RequirementsListPage: React.FC = () => {
-  const { role } = useAuth();
+  const { role, user } = useAuth();
   const [requirements, setRequirements] = useState<Requirement[]>([]);
+  const [managers, setManagers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
   useEffect(() => {
     loadRequirements();
+    authService.getAllUsers().then((users) => setManagers(users.filter((u) => u.role === 'TeamManager')));
   }, []);
 
   const loadRequirements = async () => {
@@ -28,9 +31,25 @@ export const RequirementsListPage: React.FC = () => {
     }
   };
 
+  const visibleRequirements =
+    role === 'TeamManager'
+      ? requirements.filter(
+          (r) => r.assignedTeamManagerId === user?.id || r.assignedTeamManager === user?.name
+        )
+      : requirements;
+
   const filtered = statusFilter === 'all'
-    ? requirements
-    : requirements.filter((r) => r.status === statusFilter);
+    ? visibleRequirements
+    : visibleRequirements.filter((r) => r.status === statusFilter);
+
+  const handleAssignManager = async (reqId: string, managerId: string) => {
+    const manager = managers.find((m) => m.id === managerId);
+    await requirementsService.update(reqId, {
+      assignedTeamManagerId: managerId,
+      assignedTeamManager: manager?.name || ''
+    });
+    await loadRequirements();
+  };
 
   const columns: Column<Requirement>[] = [
     {
@@ -92,8 +111,24 @@ export const RequirementsListPage: React.FC = () => {
             ) : (
               <span className="text-amber-400 italic">Unassigned</span>
             )}
-            {req.assignedTeamManager && (
+            {req.assignedTeamManager ? (
               <div className="text-[11px] text-slate-500">Mgr: {req.assignedTeamManager}</div>
+            ) : (
+              <div className="text-[11px] text-amber-400">No manager assigned</div>
+            )}
+            {(role === 'CRM' || role === 'Admin') && (
+              <select
+                value={req.assignedTeamManagerId || managers.find((m) => m.name === req.assignedTeamManager)?.id || ''}
+                onChange={(e) => handleAssignManager(req.id, e.target.value)}
+                className="mt-1 w-full max-w-[180px] px-2 py-1 rounded-lg bg-slate-950 border border-slate-800 text-[11px] text-slate-200"
+              >
+                <option value="">Assign manager...</option>
+                {managers.map((manager) => (
+                  <option key={manager.id} value={manager.id}>
+                    {manager.name}
+                  </option>
+                ))}
+              </select>
             )}
           </div>
         );

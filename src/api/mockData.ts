@@ -33,6 +33,22 @@ export const INITIAL_USERS: User[] = [
     department: 'Engineering Recruitment'
   },
   {
+    id: 'user-manager-2',
+    name: 'Priya Kapoor',
+    email: 'priya.kapoor@talentpulse.internal',
+    role: 'TeamManager',
+    title: 'Product Talent Manager',
+    department: 'Product Recruitment'
+  },
+  {
+    id: 'user-manager-3',
+    name: 'James Ortiz',
+    email: 'james.ortiz@talentpulse.internal',
+    role: 'TeamManager',
+    title: 'Enterprise Delivery Manager',
+    department: 'Enterprise Recruitment'
+  },
+  {
     id: 'user-crm-1',
     name: 'Marcus Chen',
     email: 'marcus.chen@talentpulse.internal',
@@ -57,6 +73,8 @@ export const INITIAL_USERS: User[] = [
     department: 'Technical Advisory Board'
   }
 ];
+
+export const TEAM_MANAGERS = INITIAL_USERS.filter((u) => u.role === 'TeamManager');
 
 export const INITIAL_MASTER_DATA: MasterData = {
   candidateStatuses: [

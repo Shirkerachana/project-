@@ -93,15 +93,6 @@ export const CandidateProfilePage: React.FC = () => {
               </Link>
             )}
 
-            {candidate.status === 'RTR_Pending' && (
-              <Link
-                to={`/screening/calls/${candidate.screeningCallId || 'sc-001'}/rtr`}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition-all shadow-md"
-              >
-                <Mail className="w-4 h-4" />
-                <span>Review & Dispatch RTR Draft</span>
-              </Link>
-            )}
 
             {candidate.status === 'Profile_Pending_Approval' && (
               <Link
@@ -504,15 +495,8 @@ export const CandidateProfilePage: React.FC = () => {
               <Calendar className="w-8 h-8 text-slate-500 mx-auto" />
               <div className="text-sm font-bold text-white">No Interview Slot Confirmed Yet</div>
               <p className="text-xs text-slate-400 max-w-md mx-auto">
-                Candidate is ready for Phase 3. Use the AI Availability Dialer to call the candidate and negotiate an open evaluator slot.
+                No interview slot has been confirmed for this candidate yet.
               </p>
-              <Link
-                to={`/scheduling?candidateId=${candidate.id}`}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-md"
-              >
-                <PhoneCall className="w-4 h-4" />
-                <span>Launch AI Availability Call Now</span>
-              </Link>
             </div>
           )}
         </div>

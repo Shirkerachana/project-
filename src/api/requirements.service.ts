@@ -86,11 +86,13 @@ export const requirementsService = {
         ...data,
         id: `req-${Date.now()}`,
         code: `REQ-2026-0${codeNum}`,
-        openPositions: data.positions,
+        openPositions: (data as any).openPositions ?? data.positions,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         assignedRecruiterIds: data.assignedRecruiterIds || [],
-        assignedRecruiterNames: data.assignedRecruiterNames || []
+        assignedRecruiterNames: data.assignedRecruiterNames || [],
+        assignedTeamManager: data.assignedTeamManager || '',
+        assignedTeamManagerId: data.assignedTeamManagerId || ''
       };
       const updated = [newReq, ...items];
       savePersistentState(REQUIREMENTS_KEY, updated);

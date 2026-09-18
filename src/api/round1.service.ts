@@ -37,19 +37,28 @@ export const round1Service = {
 
   async getReport(candidateId: string): Promise<AIInterviewReport> {
     return simulateDelay(() => {
-      const reports = getPersistentState<Record<string, AIInterviewReport>>(ROUND1_REPORTS_KEY, {
-        'cand-001': INITIAL_AI_REPORTS[0],
-        'cand-007': {
-          ...INITIAL_AI_REPORTS[0],
-          id: 'report-007',
-          candidateId: 'cand-007',
-          candidateName: 'Priya Patel',
-          requirementTitle: 'Lead Cloud Architect',
-          overallScore: 92,
-          recommendation: 'Strong Hire'
-        }
+      const seed: Record<string, AIInterviewReport> = {};
+      INITIAL_AI_REPORTS.forEach((report) => {
+        seed[report.candidateId] = report;
       });
-      return reports[candidateId] || { ...INITIAL_AI_REPORTS[0], candidateId };
+      const reports = {
+        ...seed,
+        ...getPersistentState<Record<string, AIInterviewReport>>(ROUND1_REPORTS_KEY, seed)
+      };
+      if (reports[candidateId]?.reasoning && (reports[candidateId].questionAssessments || reports[candidateId].questionEvaluations)) {
+        return reports[candidateId];
+      }
+      const fromSeed = INITIAL_AI_REPORTS.find((report) => report.candidateId === candidateId);
+      if (fromSeed) return fromSeed;
+      return {
+        ...INITIAL_AI_REPORTS[0],
+        id: `report-${candidateId}`,
+        candidateId,
+        candidateName: 'Candidate',
+        overallScore: 82,
+        recommendation: 'Hire',
+        generatedAt: new Date().toISOString()
+      };
     });
   },
 

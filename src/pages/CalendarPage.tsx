@@ -163,6 +163,10 @@ export const CalendarPage: React.FC = () => {
         {/* Legend */}
         <div className="hidden md:flex items-center gap-4 text-xs font-medium">
           <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+            <span className="text-slate-300">Screening Call</span>
+          </div>
+          <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
             <span className="text-slate-300">AI Interview</span>
           </div>
@@ -237,7 +241,9 @@ export const CalendarPage: React.FC = () => {
                         key={ev.id}
                         onClick={() => setSelectedEvent(ev)}
                         className={`px-2 py-1 rounded text-[11px] truncate cursor-pointer transition-all ${
-                          ev.type === 'ai_interview'
+                          ev.type === 'screening_call'
+                            ? 'bg-amber-950 text-amber-300 border border-amber-500/30 hover:bg-amber-900'
+                            : ev.type === 'ai_interview'
                             ? 'bg-indigo-950 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-900'
                             : ev.type === 'round2_interview'
                             ? 'bg-emerald-950 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-900'
@@ -333,7 +339,7 @@ export const CalendarPage: React.FC = () => {
 
       {/* Event Details Dialog */}
       {selectedEvent && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="tp-modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
             className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl p-6 space-y-4 animate-in fade-in"
             onClick={(e) => e.stopPropagation()}
@@ -386,6 +392,26 @@ export const CalendarPage: React.FC = () => {
                 </div>
               )}
 
+              {selectedEvent.transcriptSummary && (
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                    Screening Summary
+                  </span>
+                  <p className="text-slate-300 mt-1 leading-relaxed bg-slate-950/60 p-3 rounded-xl border border-slate-800 whitespace-pre-wrap">
+                    {selectedEvent.transcriptSummary}
+                  </p>
+                </div>
+              )}
+              {selectedEvent.transcript && (
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                    Full Transcript
+                  </span>
+                  <p className="text-slate-300 mt-1 leading-relaxed bg-slate-950/60 p-3 rounded-xl border border-slate-800 whitespace-pre-wrap max-h-48 overflow-y-auto font-mono text-[11px]">
+                    {selectedEvent.transcript}
+                  </p>
+                </div>
+              )}
               {selectedEvent.candidateName && (
                 <div className="p-3 rounded-xl bg-indigo-950/40 border border-indigo-500/30">
                   <span className="text-[10px] font-mono text-indigo-400 uppercase font-bold">

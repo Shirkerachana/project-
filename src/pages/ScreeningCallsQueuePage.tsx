@@ -1,35 +1,39 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   PhoneCall,
   Play,
-  FileText,
   Mail,
   CheckCircle2,
-  Clock,
-  Sparkles,
   AlertTriangle,
   ArrowRight,
-  Plus
+  UserCheck
 } from 'lucide-react';
 import { PageHeader } from '../components/common/PageHeader';
-import { StatusBadge } from '../components/common/StatusBadge';
 import { AIBadge } from '../components/common/AIBadge';
 import { DataTable, Column } from '../components/common/DataTable';
-import { ConfirmationDialog } from '../components/common/ConfirmationDialog';
+import { calendarService } from '../api/calendar.service';
 import { screeningService } from '../api/screening.service';
 import { candidatesService } from '../api/candidates.service';
+import { emailService } from '../api/email.service';
 import { useToast } from '../context/ToastContext';
+import { useAuth } from '../context/AuthContext';
 import { ScreeningCall, Candidate } from '../types';
 
 export const ScreeningCallsQueuePage: React.FC = () => {
   const toast = useToast();
+  const navigate = useNavigate();
+  const { user, role } = useAuth();
   const [calls, setCalls] = useState<ScreeningCall[]>([]);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isNewCallModalOpen, setIsNewCallModalOpen] = useState(false);
+  const [isBulkCallModalOpen, setIsBulkCallModalOpen] = useState(false);
   const [selectedCandidateId, setSelectedCandidateId] = useState('');
+  const [bulkCandidateIds, setBulkCandidateIds] = useState<string[]>([]);
+  const [selectedCallIds, setSelectedCallIds] = useState<string[]>([]);
   const [isBooking, setIsBooking] = useState(false);
+  const [isBulkActing, setIsBulkActing] = useState(false);
 
   useEffect(() => {
     loadCalls();
@@ -45,10 +49,31 @@ export const ScreeningCallsQueuePage: React.FC = () => {
       setCalls(allCalls);
       setCandidates(allCands);
       if (allCands.length > 0) setSelectedCandidateId(allCands[0].id);
+      await Promise.all(
+        allCalls
+          .filter((call) => (call.transcript && call.transcript.length > 0) || call.recruiterNotes)
+          .map((call) =>
+            calendarService.upsertScreeningTranscriptEvent({
+              callId: call.id,
+              candidateId: call.candidateId,
+              candidateName: call.candidateName,
+              roleTitle: call.requirementTitle,
+              scheduledAt: call.scheduledAt,
+              durationSeconds: call.durationSeconds,
+              summary: call.recruiterNotes,
+              transcript: call.transcript,
+              score: call.overallScore,
+              phone: call.candidatePhone
+            })
+          )
+      );
     } finally {
       setIsLoading(false);
     }
   };
+
+  const selectedCalls = calls.filter((c) => selectedCallIds.includes(c.id));
+  const selectedCandidateIdsFromCalls: string[] = Array.from(new Set(selectedCalls.map((c) => c.candidateId)));
 
   const handleBookSingleCall = async () => {
     if (!selectedCandidateId) return;
@@ -62,6 +87,71 @@ export const ScreeningCallsQueuePage: React.FC = () => {
       toast.error('Booking Error', err.message);
     } finally {
       setIsBooking(false);
+    }
+  };
+
+  const handleBulkCall = async () => {
+    const ids = selectedCandidateIdsFromCalls.length > 0 ? selectedCandidateIdsFromCalls : bulkCandidateIds;
+    if (ids.length === 0) {
+      toast.warning('Select Candidates', 'Choose at least one candidate to start bulk calling.');
+      return;
+    }
+    setIsBulkActing(true);
+    try {
+      const created = await screeningService.bookBatchCalls(ids);
+      toast.success('Bulk Calls Initialized', `${created.length} AI screening call(s) started.`);
+      setIsBulkCallModalOpen(false);
+      setBulkCandidateIds([]);
+      setSelectedCallIds([]);
+      await loadCalls();
+    } catch (err: any) {
+      toast.error('Bulk Call Error', err.message);
+    } finally {
+      setIsBulkActing(false);
+    }
+  };
+
+  const handleBulkMail = async () => {
+    if (selectedCalls.length === 0) {
+      toast.warning('Select Candidates', 'Select candidates from the list to send mail.');
+      return;
+    }
+    setIsBulkActing(true);
+    try {
+      for (const call of selectedCalls) {
+        await emailService.sendEmail(
+          {
+            recipient: call.candidateEmail,
+            subject: `Screening follow-up: ${call.requirementTitle}`,
+            body: `Hello ${call.candidateName},\n\nThank you for completing your AI voice screening call for the ${call.requirementTitle} role. Our team will follow up with next steps shortly.\n\nBest regards,\nTalentPulse Recruitment`
+          },
+          user ? { id: user.id, name: user.name, email: user.email, role } : undefined
+        );
+      }
+      toast.success('Bulk Mail Sent', `Dispatched follow-up email to ${selectedCalls.length} candidate(s).`);
+      navigate('/email');
+    } catch (err: any) {
+      toast.error('Mail Error', err.message);
+    } finally {
+      setIsBulkActing(false);
+    }
+  };
+
+  const handleProceedApprovals = async () => {
+    const ids = selectedCandidateIdsFromCalls;
+    setIsBulkActing(true);
+    try {
+      if (ids.length > 0) {
+        for (const candidateId of ids) {
+          await candidatesService.updateStatus(candidateId, 'Profile_Pending_Approval');
+        }
+        toast.success('Sent to Approvals', `${ids.length} candidate(s) forwarded to Team Manager Approvals.`);
+      }
+      navigate('/approvals');
+    } catch (err: any) {
+      toast.error('Approval Error', err.message);
+    } finally {
+      setIsBulkActing(false);
     }
   };
 
@@ -80,7 +170,7 @@ export const ScreeningCallsQueuePage: React.FC = () => {
             <AIBadge label="AI Call" size="sm" />
           </Link>
           <div className="text-xs text-slate-400 mt-0.5">
-            {call.candidatePhone} &bull; Call ID: {call.id}
+            {call.candidatePhone} • Call ID: {call.id}
           </div>
         </div>
       )
@@ -105,9 +195,7 @@ export const ScreeningCallsQueuePage: React.FC = () => {
         <div className="text-xs">
           {call.overallScore ? (
             <div className="flex items-center gap-2">
-              <span className="text-base font-black text-emerald-400 font-mono">
-                {call.overallScore}
-              </span>
+              <span className="text-base font-black text-emerald-400 font-mono">{call.overallScore}</span>
               <span className="text-slate-500">/100</span>
             </div>
           ) : (
@@ -132,11 +220,6 @@ export const ScreeningCallsQueuePage: React.FC = () => {
             >
               {call.overallConfidence || (typeof call.transcriptionConfidence === 'number' ? `${Math.round(call.transcriptionConfidence * 100)}%` : 'HIGH')}
             </span>
-            {call.confidenceFlagReason && (
-              <div className="text-[10px] text-amber-400 truncate max-w-[140px] mt-0.5">
-                Verify audio
-              </div>
-            )}
           </div>
         );
       }
@@ -154,7 +237,6 @@ export const ScreeningCallsQueuePage: React.FC = () => {
             <Play className="w-3 h-3 fill-current" />
             <span>Review Call & Audio</span>
           </Link>
-
           <Link
             to={`/screening/calls/${call.id}/rtr`}
             className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors flex items-center gap-1"
@@ -173,18 +255,72 @@ export const ScreeningCallsQueuePage: React.FC = () => {
         title="AI Voice Screening Calls"
         description="Phase 2: Automated telephony screening, speech-to-text transcripts with confidence warnings, and scoring rubrics."
         actions={
-          <button
-            type="button"
-            onClick={() => setIsNewCallModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-md active:scale-95"
-          >
-            <PhoneCall className="w-4 h-4" />
-            <span>Book Single Screening Call</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleProceedApprovals}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold"
+            >
+              <UserCheck className="w-4 h-4" />
+              <span>Proceed to Team Manager Approvals</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={async () => {
+                const latest = await candidatesService.getAll();
+                setCandidates(latest);
+                setIsBulkCallModalOpen(true);
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-100 text-xs font-bold border border-slate-700"
+            >
+              <PhoneCall className="w-4 h-4" />
+              <span>Bulk Calling</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsNewCallModalOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold"
+            >
+              <PhoneCall className="w-4 h-4" />
+              <span>Book Single Screening Call</span>
+            </button>
+          </div>
         }
       />
 
-      {/* Overview Stat Strip */}
+      {selectedCallIds.length > 0 && (
+        <div className="p-4 rounded-2xl bg-indigo-950/60 border border-indigo-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="text-sm font-bold text-white">{selectedCallIds.length} candidate(s) selected</div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handleBulkCall}
+              disabled={isBulkActing}
+              className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold"
+            >
+              Bulk Call
+            </button>
+            <button
+              type="button"
+              onClick={handleBulkMail}
+              disabled={isBulkActing}
+              className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-100 text-xs font-bold"
+            >
+              Bulk Mail
+            </button>
+            <button
+              type="button"
+              onClick={handleProceedApprovals}
+              disabled={isBulkActing}
+              className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold"
+            >
+              Proceed to Team Manager Approvals
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center gap-4">
           <div className="p-3 rounded-xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30">
@@ -195,28 +331,22 @@ export const ScreeningCallsQueuePage: React.FC = () => {
             <div className="text-2xl font-black text-white">{calls.length}</div>
           </div>
         </div>
-
         <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center gap-4">
           <div className="p-3 rounded-xl bg-emerald-600/20 text-emerald-400 border border-emerald-500/30">
             <CheckCircle2 className="w-5 h-5" />
           </div>
           <div>
             <div className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Completed & Transcribed</div>
-            <div className="text-2xl font-black text-emerald-400">
-              {calls.filter((c) => c.status === 'completed').length}
-            </div>
+            <div className="text-2xl font-black text-emerald-400">{calls.filter((c) => c.status === 'completed').length}</div>
           </div>
         </div>
-
         <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center gap-4">
           <div className="p-3 rounded-xl bg-amber-600/20 text-amber-400 border border-amber-500/30">
             <AlertTriangle className="w-5 h-5" />
           </div>
           <div>
             <div className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Low Confidence Flags</div>
-            <div className="text-2xl font-black text-amber-400">
-              {calls.filter((c) => c.transcriptionConfidence === 'low').length}
-            </div>
+            <div className="text-2xl font-black text-amber-400">{calls.filter((c) => c.overallConfidence === 'low').length}</div>
           </div>
         </div>
       </div>
@@ -231,57 +361,86 @@ export const ScreeningCallsQueuePage: React.FC = () => {
           c.candidateName.toLowerCase().includes(q) ||
           c.candidatePhone.toLowerCase().includes(q)
         }
+        selectedIds={selectedCallIds}
+        onSelectToggle={(id) =>
+          setSelectedCallIds((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]))
+        }
+        onSelectAll={(ids) => setSelectedCallIds(ids)}
         emptyTitle="No screening calls found"
         emptyDescription="Schedule a screening call with a sourced candidate to begin."
       />
 
-      {/* Book Single Screening Modal */}
       {isNewCallModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+        <div className="tp-modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <PhoneCall className="w-4 h-4 text-indigo-400" />
-                <span>Initiate AI Automated Voice Call</span>
-              </h3>
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1.5">
-                Select Candidate
-              </label>
-              <select
-                value={selectedCandidateId}
-                onChange={(e) => setSelectedCandidateId(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              >
-                {candidates.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.fullName} ({c.requirementTitle})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <p className="text-xs text-slate-400 leading-relaxed bg-slate-950/60 p-3 rounded-xl border border-slate-800">
-              The AI voice screener will call the candidate's phone, verify basic work authorization, notice period, and technical familiarity against the question bank.
-            </p>
-
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <PhoneCall className="w-4 h-4 text-indigo-400" />
+              Initiate AI Automated Voice Call
+            </h3>
+            <select
+              value={selectedCandidateId}
+              onChange={(e) => setSelectedCandidateId(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white"
+            >
+              {candidates.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.fullName} ({c.requirementTitle})
+                </option>
+              ))}
+            </select>
             <div className="flex items-center justify-end gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setIsNewCallModalOpen(false)}
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold"
-              >
+              <button type="button" onClick={() => setIsNewCallModalOpen(false)} className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">
                 Cancel
               </button>
-              <button
-                type="button"
-                onClick={handleBookSingleCall}
-                disabled={isBooking}
-                className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md"
-              >
+              <button type="button" onClick={handleBookSingleCall} disabled={isBooking} className="px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold">
                 {isBooking ? 'Initiating...' : 'Call Candidate Now'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isBulkCallModalOpen && (
+        <div className="tp-modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-2xl">
+            <h3 className="text-base font-bold text-white">Bulk AI Screening Calls</h3>
+            <p className="text-xs text-slate-400">Select multiple candidates. Each selected candidate will receive an AI screening call.</p>
+            <label className="flex items-center gap-2 text-xs font-semibold text-slate-200">
+              <input
+                type="checkbox"
+                checked={candidates.length > 0 && bulkCandidateIds.length === candidates.length}
+                onChange={() =>
+                  setBulkCandidateIds(
+                    bulkCandidateIds.length === candidates.length ? [] : candidates.map((c) => c.id)
+                  )
+                }
+              />
+              Select all
+            </label>
+            <div className="max-h-64 overflow-y-auto space-y-2">
+              {candidates.map((c) => {
+                const checked = bulkCandidateIds.includes(c.id);
+                return (
+                  <label key={c.id} className="flex items-center gap-3 p-2.5 rounded-xl border border-slate-800 bg-slate-950/60 text-xs text-slate-200">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() =>
+                        setBulkCandidateIds((prev) => (checked ? prev.filter((id) => id !== c.id) : [...prev, c.id]))
+                      }
+                    />
+                    <span className="font-semibold">{c.fullName}</span>
+                    <span className="text-slate-500">{c.requirementTitle}</span>
+                  </label>
+                );
+              })}
+            </div>
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button type="button" onClick={() => setIsBulkCallModalOpen(false)} className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">
+                Cancel
+              </button>
+              <button type="button" onClick={handleBulkCall} disabled={isBulkActing} className="px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold">
+                {isBulkActing ? 'Initializing...' : `Start ${bulkCandidateIds.length || 0} Call(s)`}
               </button>
             </div>
           </div>

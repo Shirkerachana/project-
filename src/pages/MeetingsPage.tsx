@@ -370,7 +370,7 @@ export const MeetingsPage: React.FC = () => {
 
       {/* Interactive WebRTC Video Room Modal */}
       {liveMeeting && (
-        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col justify-between p-4 sm:p-6 animate-in fade-in">
+        <div className="tp-modal-overlay fixed inset-0 z-50 flex flex-col justify-between p-4 sm:p-6 animate-in fade-in">
           {/* Room Top Bar */}
           <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-900/90 border border-slate-800">
             <div className="flex items-center gap-3">
@@ -489,7 +489,7 @@ export const MeetingsPage: React.FC = () => {
 
       {/* Schedule Meeting Modal */}
       {createModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="tp-modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
             className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl p-6 space-y-4"
             onClick={(e) => e.stopPropagation()}

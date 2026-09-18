@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useTheme } from '../context/ThemeContext';
 import { UserRole } from '../types';
+import { formatRoleLabel } from '../config/roles';
 
 export const LoginPage: React.FC = () => {
   const { loginAsRole, user, isAuthenticated } = useAuth();
@@ -22,8 +23,8 @@ export const LoginPage: React.FC = () => {
       sampleEmail: 'david.miller@talentpulse.internal'
     },
     TeamManager: {
-      title: 'Team Manager Workspace',
-      desc: 'Review incoming client JDs, distribute to recruiters, review and approve/reject candidate profiles for Ceipal.',
+      title: 'Manager Workspace',
+      desc: 'Review incoming client JDs, distribute to recruiters, and review candidate profiles.',
       sampleEmail: 'sarah.jenkins@talentpulse.internal'
     },
     CRM: {
@@ -64,7 +65,7 @@ export const LoginPage: React.FC = () => {
       const targetEmail = roleProfiles[role].sampleEmail;
       setEmail(targetEmail);
       const loggedUser = await loginAsRole(role, targetEmail);
-      toast.success('Signed in successfully', `Entered workspace as ${loggedUser.name} (${loggedUser.role}).`);
+      toast.success('Signed in successfully', `Entered workspace as ${loggedUser.name} (${formatRoleLabel(loggedUser.role)}).`);
       navigate('/dashboard', { replace: true });
     } catch (err: any) {
       toast.error('Authentication Error', err.message || 'Unable to sign in.');
@@ -82,7 +83,7 @@ export const LoginPage: React.FC = () => {
         return;
       }
       const loggedUser = await loginAsRole(selectedRole, email);
-      toast.success('Signed in successfully', `Entered workspace as ${loggedUser.name} (${loggedUser.role}).`);
+      toast.success('Signed in successfully', `Entered workspace as ${loggedUser.name} (${formatRoleLabel(loggedUser.role)}).`);
       navigate('/dashboard', { replace: true });
     } catch (err: any) {
       toast.error('Authentication Error', err.message || 'Unable to sign in.');
@@ -136,7 +137,7 @@ export const LoginPage: React.FC = () => {
               <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
               <div className="text-xs text-slate-300">
                 <span>Active session: </span>
-                <strong className="text-white">{user.name}</strong> ({user.role})
+                <strong className="text-white">{user.name}</strong> ({formatRoleLabel(user.role)})
               </div>
             </div>
             <Link
@@ -172,7 +173,7 @@ export const LoginPage: React.FC = () => {
                         : 'bg-slate-950/60 border-slate-800 text-slate-300 hover:bg-slate-800/80 hover:border-slate-700'
                     }`}
                   >
-                    <div className="text-xs">{r}</div>
+                    <div className="text-xs">{formatRoleLabel(r)}</div>
                     <div className="text-[10px] opacity-75 font-normal truncate mt-0.5">
                       {roleProfiles[r].title.split(' ')[0]}
                     </div>

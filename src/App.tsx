@@ -39,6 +39,7 @@ import { AIInterviewWorkflowPage } from './pages/AIInterviewWorkflowPage';
 import { InterviewWorkspacePage } from './pages/InterviewWorkspacePage';
 import { AuditLogPage } from './pages/AuditLogPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { ManagerTeamPage } from './pages/ManagerTeamPage';
 import { UserRole } from './types';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -351,6 +352,18 @@ export default function App() {
               />
 
 
+              {/* Manager team roster */}
+              <Route
+                path="/team"
+                element={
+                  <ProtectedRoute>
+                    <RoleProtectedRoute allowedRoles={['TeamManager']}>
+                      <ManagerTeamPage />
+                    </RoleProtectedRoute>
+                  </ProtectedRoute>
+                }
+              />
+
               {/* System Audit Log */}
               <Route
                 path="/audit-log"
@@ -366,7 +379,9 @@ export default function App() {
                 path="/settings"
                 element={
                   <ProtectedRoute>
-                    <SettingsPage />
+                    <RoleProtectedRoute allowedRoles={['Admin', 'CRM']}>
+                      <SettingsPage />
+                    </RoleProtectedRoute>
                   </ProtectedRoute>
                 }
               />
@@ -374,7 +389,9 @@ export default function App() {
                 path="/settings/:tab"
                 element={
                   <ProtectedRoute>
-                    <SettingsPage />
+                    <RoleProtectedRoute allowedRoles={['Admin', 'CRM']}>
+                      <SettingsPage />
+                    </RoleProtectedRoute>
                   </ProtectedRoute>
                 }
               />

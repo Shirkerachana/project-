@@ -101,7 +101,7 @@ export const FinalHiringDecisionPage: React.FC = () => {
   };
 
   return (
-    <div id="final-hiring-decision-page" className="max-w-5xl mx-auto space-y-6">
+    <div id="final-hiring-decision-page" className="space-y-6">
       <PageHeader
         title={`Final Hiring Gate: ${candidate.fullName}`}
         description="HUMAN CONTROL POINT #3: Ultimate hiring determination consolidating AI technical ratings, panel evaluations, and manager reviews."

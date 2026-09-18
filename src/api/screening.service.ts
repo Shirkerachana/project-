@@ -141,7 +141,7 @@ Please review and confirm your authorization so our Team Manager can complete th
    * Response: RTREmail
    * Auth Required: true
    */
-  async sendRTREmail(id: string, bodyText: string, subject: string): Promise<RTREmail> {
+  async sendRTREmail(id: string, bodyText: string, subject: string, extra?: Record<string, any>): Promise<RTREmail> {
     return simulateDelay(() => {
       const emails = getPersistentState<RTREmail[]>(RTR_EMAILS_KEY, INITIAL_RTR_EMAILS);
       const index = emails.findIndex((e) => e.id === id);
@@ -149,6 +149,7 @@ Please review and confirm your authorization so our Team Manager can complete th
 
       const updated: RTREmail = {
         ...emails[index],
+        ...extra,
         bodyText,
         subject,
         status: 'sent',
@@ -292,13 +293,15 @@ Please review and confirm your authorization so our Team Manager can complete th
   async bookCall(candidateId: string, scheduledAt: string): Promise<ScreeningCall> {
     return simulateDelay(() => {
       const calls = getPersistentState<ScreeningCall[]>(SCREENING_CALLS_KEY, INITIAL_SCREENING_CALLS);
+      const candidates = getPersistentState<Candidate[]>(CANDIDATES_KEY, INITIAL_CANDIDATES);
+      const candidate = candidates.find((c) => c.id === candidateId);
       const newCall: ScreeningCall = {
         id: `call-${Date.now()}`,
         candidateId,
-        candidateName: 'Candidate',
-        candidateEmail: 'candidate@example.com',
-        candidatePhone: '+1 555-0199',
-        requirementTitle: 'Engineering Position',
+        candidateName: candidate?.fullName || 'Candidate',
+        candidateEmail: candidate?.email || 'candidate@example.com',
+        candidatePhone: candidate?.phone || '+1 555-0199',
+        requirementTitle: candidate?.requirementTitle || 'Engineering Position',
         scheduledAt,
         status: 'scheduled',
         durationSeconds: 0,
@@ -308,6 +311,21 @@ Please review and confirm your authorization so our Team Manager can complete th
       };
       const updated = [newCall, ...calls];
       savePersistentState(SCREENING_CALLS_KEY, updated);
+
+      if (candidate) {
+        const cIndex = candidates.findIndex((c) => c.id === candidateId);
+        if (cIndex !== -1) {
+          candidates[cIndex] = {
+            ...candidates[cIndex],
+            phase: 2,
+            status: 'Screening_Scheduled',
+            screeningCallId: newCall.id,
+            updatedAt: new Date().toISOString()
+          };
+          savePersistentState(CANDIDATES_KEY, candidates);
+        }
+      }
+
       return newCall;
     });
   },
@@ -317,7 +335,8 @@ Please review and confirm your authorization so our Team Manager can complete th
   },
 
   async sendRTR(id: string, payload: { subject?: string; body?: string; bodyText?: string; [key: string]: any }) {
-    return this.sendRTREmail(id, payload.body || payload.bodyText || '', payload.subject || 'Right to Represent Authorization');
+    const { subject, body, bodyText, ...extra } = payload;
+    return this.sendRTREmail(id, body || bodyText || '', subject || 'Right to Represent Authorization', extra);
   },
 
   async recordRTRAcknowledgement(candidateId: string, _draftId?: string) {
@@ -325,13 +344,11 @@ Please review and confirm your authorization so our Team Manager can complete th
   },
 
   async bookBatchCalls(candidateIds: string[]) {
-    return simulateDelay(() => {
-      return candidateIds.map((id) => ({
-        id: `call-${id}-${Date.now()}`,
-        candidateId: id,
-        status: 'scheduled'
-      }));
-    });
+    const created: ScreeningCall[] = [];
+    for (const id of candidateIds) {
+      created.push(await this.bookCall(id, new Date().toISOString()));
+    }
+    return created;
   }
 };
 

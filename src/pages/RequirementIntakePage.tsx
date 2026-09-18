@@ -6,7 +6,8 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { requirementsService } from '../api/requirements.service';
 import { configService } from '../api/config.service';
-import { MasterData } from '../types';
+import { authService } from '../api/auth.service';
+import { MasterData, User } from '../types';
 
 export const RequirementIntakePage: React.FC = () => {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ export const RequirementIntakePage: React.FC = () => {
   const toast = useToast();
 
   const [masterData, setMasterData] = useState<MasterData | null>(null);
+  const [managers, setManagers] = useState<User[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form State
@@ -28,10 +30,16 @@ export const RequirementIntakePage: React.FC = () => {
   const [requiredSkills, setRequiredSkills] = useState<string[]>(['TypeScript', 'React', 'Node.js']);
   const [newSkill, setNewSkill] = useState('');
   const [notes, setNotes] = useState('');
+  const [assignedTeamManagerId, setAssignedTeamManagerId] = useState('');
 
   useEffect(() => {
     configService.getMasterData().then((data) => {
       setMasterData(data);
+    });
+    authService.getAllUsers().then((users) => {
+      const teamManagers = users.filter((u) => u.role === 'TeamManager');
+      setManagers(teamManagers);
+      if (teamManagers[0]) setAssignedTeamManagerId(teamManagers[0].id);
     });
   }, []);
 
@@ -53,6 +61,13 @@ export const RequirementIntakePage: React.FC = () => {
       return;
     }
 
+    if (!assignedTeamManagerId) {
+      toast.error('Manager required', 'Select which Manager should see this job.');
+      return;
+    }
+
+    const selectedManager = managers.find((m) => m.id === assignedTeamManagerId);
+
     setIsSubmitting(true);
     try {
       const created = await requirementsService.create({
@@ -61,13 +76,18 @@ export const RequirementIntakePage: React.FC = () => {
         department,
         location,
         openPositions: Number(openPositions),
+        positions: Number(openPositions),
         experienceYears: Number(experienceYears),
         budget,
         description,
         requiredSkills,
         niceToHaveSkills: ['GraphQL', 'AWS', 'Docker'],
         assignedRecruiters: [],
-        createdBy: user?.name || 'Marcus Chen (CRM)'
+        assignedTeamManager: selectedManager?.name || '',
+        assignedTeamManagerId: selectedManager?.id || '',
+        createdBy: user?.name || 'Marcus Chen (CRM)',
+        status: 'circulated',
+        priority: 'High'
       });
 
       toast.success('Requirement Created', `${created.title} has been logged and sent for circulation.`);
@@ -80,7 +100,7 @@ export const RequirementIntakePage: React.FC = () => {
   };
 
   return (
-    <div id="requirement-intake-page" className="max-w-4xl mx-auto space-y-6">
+    <div id="requirement-intake-page" className="space-y-6">
       <PageHeader
         title="New Client Job Requirement (JD Intake)"
         description="Phase 1: Enter incoming client role requirements. Dynamic dropdowns driven by master data configuration."
@@ -260,6 +280,27 @@ export const RequirementIntakePage: React.FC = () => {
 
           <div>
             <label className="text-xs font-semibold text-slate-300 block mb-1.5">
+              Show this job to Manager <span className="text-rose-400">*</span>
+            </label>
+            <select
+              value={assignedTeamManagerId}
+              onChange={(e) => setAssignedTeamManagerId(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+            >
+              <option value="">Select a manager</option>
+              {managers.map((manager) => (
+                <option key={manager.id} value={manager.id}>
+                  {manager.name} — {manager.title}
+                </option>
+              ))}
+            </select>
+            <p className="text-[11px] text-slate-500 mt-1.5">
+              After the job is generated, only the selected manager will see this requirement in their workspace.
+            </p>
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-slate-300 block mb-1.5">
               CRM Notes / Special Client Conditions
             </label>
             <input
@@ -286,7 +327,7 @@ export const RequirementIntakePage: React.FC = () => {
             className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-md active:scale-95 disabled:opacity-50 flex items-center gap-2"
           >
             <Save className="w-4 h-4" />
-            <span>{isSubmitting ? 'Saving Requirement...' : 'Save & Circulate Requirement'}</span>
+            <span>{isSubmitting ? 'Saving Requirement...' : 'Generate Job & Assign Manager'}</span>
           </button>
         </div>
       </form>

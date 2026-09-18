@@ -32,6 +32,7 @@ export interface Requirement {
   assignedRecruiterNames: string[];
   assignedRecruiters?: string[];
   assignedTeamManager?: string;
+  assignedTeamManagerId?: string;
   createdBy: string;
   createdAt: string;
   updatedAt: string;
@@ -88,6 +89,7 @@ export interface Candidate {
   expectedSalary: string;
   noticePeriod: string;
   skills: string[];
+  customFields?: { id: string; label: string; value: string }[];
   resumeUrl?: string;
   resumeParsedData?: CandidateResumeData;
   aiExtractedFields: string[]; // List of fields filled via AI parsing
@@ -188,6 +190,8 @@ export interface ScreeningCall {
   recruiterNotes?: string;
   scoredBy?: string;
   scoredAt?: string;
+  aiSummary?: string;
+  rubricScores?: Record<string, number>;
 }
 
 export interface RTREmail {
@@ -199,6 +203,10 @@ export interface RTREmail {
   clientName: string;
   hourlyRateOrSalary: string;
   location: string;
+  positionTitle?: string;
+  proposedCompensation?: string;
+  sponsoringEmployer?: string;
+  customFields?: { id: string; label: string; value: string }[];
   subject: string;
   bodyText: string;
   status: 'draft' | 'sent' | 'acknowledged';
@@ -479,6 +487,7 @@ export interface EmailMessage {
   interviewJoinLink?: string;
   attachments?: EmailAttachment[];
   status?: 'draft' | 'sent' | 'failed' | 'delivered';
+  category?: 'primary' | 'promotions' | 'social' | 'updates';
 }
 
 // ==========================================
@@ -528,7 +537,7 @@ export interface CalendarEventItem {
   startDate: string; // ISO date string or YYYY-MM-DDTHH:mm
   endDate: string;
   allDay?: boolean;
-  type: 'ai_interview' | 'round2_interview' | 'meeting' | 'debrief';
+  type: 'ai_interview' | 'round2_interview' | 'meeting' | 'debrief' | 'screening_call';
   candidateId?: string;
   candidateName?: string;
   roleTitle?: string;
@@ -538,6 +547,8 @@ export interface CalendarEventItem {
   color?: string;
   description?: string;
   location?: string;
+  transcriptSummary?: string;
+  transcript?: string;
 }
 
 // ==========================================

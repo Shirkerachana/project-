@@ -126,6 +126,70 @@ class CalendarService {
     const events = this.getEvents().filter((e) => e.meetingId !== meetingId);
     this.saveEvents(events);
   }
+
+  async upsertScreeningTranscriptEvent(payload: {
+    callId: string;
+    candidateId: string;
+    candidateName: string;
+    roleTitle?: string;
+    scheduledAt: string;
+    durationSeconds?: number;
+    summary?: string;
+    transcript?: { speaker: string; text: string }[];
+    score?: number;
+    phone?: string;
+  }): Promise<CalendarEventItem> {
+    const events = this.getEvents();
+    const start = new Date(payload.scheduledAt);
+    const end = new Date(start.getTime() + Math.max(payload.durationSeconds || 300, 60) * 1000);
+    const transcriptText = (payload.transcript || [])
+      .map((entry) => `${entry.speaker}: ${entry.text}`)
+      .join('\n');
+    const summary =
+      payload.summary ||
+      (transcriptText ? transcriptText.slice(0, 420) : 'AI voice screening call transcript captured.');
+
+    const nextEvent: CalendarEventItem = {
+      id: '',
+      title: `AI Screening Call: ${payload.candidateName}`,
+      startDate: start.toISOString(),
+      endDate: end.toISOString(),
+      type: 'screening_call',
+      candidateId: payload.candidateId,
+      candidateName: payload.candidateName,
+      roleTitle: payload.roleTitle,
+      interviewId: payload.callId,
+      color: 'amber',
+      description: [
+        payload.roleTitle ? `Role: ${payload.roleTitle}` : '',
+        payload.phone ? `Phone: ${payload.phone}` : '',
+        payload.score != null ? `Screen score: ${payload.score}/100` : '',
+        `Summary: ${summary}`
+      ]
+        .filter(Boolean)
+        .join('\n'),
+      transcriptSummary: summary,
+      transcript: transcriptText
+    };
+
+    const existingIndex = events.findIndex(
+      (event) => event.interviewId === payload.callId || (event.type === 'screening_call' && event.candidateId === payload.candidateId && event.interviewId === payload.callId)
+    );
+
+    if (existingIndex >= 0) {
+      events[existingIndex] = { ...events[existingIndex], ...nextEvent, id: events[existingIndex].id };
+      this.saveEvents(events);
+      return events[existingIndex];
+    }
+
+    const created: CalendarEventItem = {
+      ...nextEvent,
+      id: `cal-screen-${payload.callId}`
+    };
+    events.push(created);
+    this.saveEvents(events);
+    return created;
+  }
 }
 
 export const calendarService = new CalendarService();

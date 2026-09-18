@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+﻿import React, { useState, useEffect, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import {
   CalendarCheck,
   PhoneCall,
@@ -34,36 +34,19 @@ import { LoadingState } from '../components/common/LoadingState';
 import { Modal } from '../components/common/Modal';
 import { AudioPlayer } from '../components/common/AudioPlayer';
 import { schedulingService } from '../api/scheduling.service';
-import { candidatesService } from '../api/candidates.service';
 import { useToast } from '../context/ToastContext';
-import { AvailabilityCallRecord, BookedInterview, Candidate, EvaluatorSlot } from '../types';
+import { AvailabilityCallRecord, BookedInterview, EvaluatorSlot } from '../types';
 
 export const SchedulingPage: React.FC = () => {
   const toast = useToast();
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const preselectedCandidateId = searchParams.get('candidateId');
 
   const [calls, setCalls] = useState<AvailabilityCallRecord[]>([]);
   const [interviews, setInterviews] = useState<BookedInterview[]>([]);
   const [evaluatorSlots, setEvaluatorSlots] = useState<EvaluatorSlot[]>([]);
-  const [allCandidates, setAllCandidates] = useState<Candidate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Active view tab
   const [activeTab, setActiveTab] = useState<'bookings' | 'slots' | 'calls'>('bookings');
-
-  // Trigger call modal & workflow
-  const [isTriggerModalOpen, setIsTriggerModalOpen] = useState(false);
-  const [candidateFilterType, setCandidateFilterType] = useState<'eligible' | 'all'>('eligible');
-  const [selectedCandidateId, setSelectedCandidateId] = useState<string>('');
-  const [selectedSlotId, setSelectedSlotId] = useState<string>('auto');
-  const [isCalling, setIsCalling] = useState(false);
-
-  // Live call simulator states
-  const [callSimulationStep, setCallSimulationStep] = useState<'idle' | 'dialing' | 'connected' | 'completed'>('idle');
-  const [liveTranscript, setLiveTranscript] = useState<{ sender: 'ai' | 'candidate'; text: string }[]>([]);
-  const [lastBookedInterview, setLastBookedInterview] = useState<BookedInterview | null>(null);
 
   // Add slot modal
   const [isAddSlotModalOpen, setIsAddSlotModalOpen] = useState(false);
@@ -78,164 +61,31 @@ export const SchedulingPage: React.FC = () => {
 
   // Expandable audio player in call logs
   const [activeAudioCallId, setActiveAudioCallId] = useState<string | null>(null);
+  const [selectedBookingIds, setSelectedBookingIds] = useState<string[]>([]);
 
   useEffect(() => {
     loadData();
   }, []);
 
-  useEffect(() => {
-    if (preselectedCandidateId && allCandidates.length > 0) {
-      setSelectedCandidateId(preselectedCandidateId);
-      setIsTriggerModalOpen(true);
-    }
-  }, [preselectedCandidateId, allCandidates]);
-
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const [cList, iList, candList, sList] = await Promise.all([
+      const [cList, iList, sList] = await Promise.all([
         schedulingService.getAvailabilityCalls(),
         schedulingService.getBookedInterviews(),
-        candidatesService.getAll(),
         schedulingService.getEvaluatorSlots()
       ]);
       setCalls(cList);
       setInterviews(iList);
-      setAllCandidates(candList);
       setEvaluatorSlots(sList);
-
-      const eligible = candList.filter(
-        (c) => c.status === 'Ceipal_Submitted' || c.status === 'Availability_Calling' || c.status === 'Slot_Booked'
-      );
-      if (eligible.length > 0 && !selectedCandidateId) {
-        setSelectedCandidateId(eligible[0].id);
-      } else if (candList.length > 0 && !selectedCandidateId) {
-        setSelectedCandidateId(candList[0].id);
-      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const eligibleCandidates = useMemo(() => {
-    return allCandidates.filter(
-      (c) => c.status === 'Ceipal_Submitted' || c.status === 'Availability_Calling' || c.status === 'Slot_Booked'
-    );
-  }, [allCandidates]);
-
   const availableSlots = useMemo(() => {
     return evaluatorSlots.filter((s) => !s.isBooked);
   }, [evaluatorSlots]);
-
-  const selectedCandidate = useMemo(() => {
-    return allCandidates.find((c) => c.id === selectedCandidateId);
-  }, [allCandidates, selectedCandidateId]);
-
-  // Start AI Telephony Call Simulation
-  const handleStartCallNow = async () => {
-    if (!selectedCandidateId) {
-      toast.warning('Candidate Required', 'Please select a candidate to call.');
-      return;
-    }
-
-    const candidate = allCandidates.find((c) => c.id === selectedCandidateId);
-    if (!candidate) return;
-
-    // If candidate isn't yet Ceipal_Submitted, auto-advance them so Phase 3 workflow stays coherent
-    if (candidate.status !== 'Ceipal_Submitted' && candidate.status !== 'Availability_Calling' && candidate.status !== 'Slot_Booked') {
-      await candidatesService.markCeipalSubmitted(candidate.id, `CEIPAL-${Date.now().toString().slice(-4)}`);
-    }
-
-    setIsCalling(true);
-    setCallSimulationStep('dialing');
-    setLiveTranscript([]);
-
-    try {
-      // Step 1: Dialing
-      await new Promise((r) => setTimeout(r, 1200));
-      setCallSimulationStep('connected');
-
-      // Step 2: Stream live conversational negotiation transcript
-      const targetSlot = selectedSlotId !== 'auto'
-        ? evaluatorSlots.find((s) => s.id === selectedSlotId)
-        : (availableSlots[0] || evaluatorSlots[0]);
-
-      const slotDate = targetSlot ? new Date(targetSlot.startTime) : new Date(Date.now() + 86400000);
-      const slotTimeStr = `${slotDate.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })} at ${slotDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-      const evaluatorName = targetSlot?.evaluatorName || 'Dr. Aris Thorne';
-
-      setLiveTranscript([
-        {
-          sender: 'ai',
-          text: `“Hello ${candidate.fullName}, this is TalentPulse AI calling on behalf of CloudApex Technologies regarding your application for the ${candidate.requirementTitle} position.”`
-        }
-      ]);
-
-      await new Promise((r) => setTimeout(r, 1400));
-      setLiveTranscript((prev) => [
-        ...prev,
-        {
-          sender: 'ai',
-          text: `“We have verified your profile submission. We have open Round 1 technical interview slots available with ${evaluatorName}. Would ${slotTimeStr} work for your schedule?”`
-        }
-      ]);
-
-      await new Promise((r) => setTimeout(r, 1500));
-      setLiveTranscript((prev) => [
-        ...prev,
-        {
-          sender: 'candidate',
-          text: `“Hello! Yes, ${slotTimeStr} works perfectly for me. I can definitely attend then.”`
-        }
-      ]);
-
-      await new Promise((r) => setTimeout(r, 1200));
-      setLiveTranscript((prev) => [
-        ...prev,
-        {
-          sender: 'ai',
-          text: `“Excellent! I have confirmed your slot for ${slotTimeStr} with ${evaluatorName}. Your interview invitation, calendar hold, and secure portal access link have just been dispatched to ${candidate.email}.”`
-        }
-      ]);
-
-      // Step 3: Trigger real backend service booking
-      const chosenSlotParam = selectedSlotId !== 'auto' ? selectedSlotId : undefined;
-      const callRecord = await schedulingService.triggerAvailabilityCall(candidate.id, chosenSlotParam);
-
-      // Refresh data
-      const [updatedCalls, updatedInterviews, updatedSlots, updatedCandidates] = await Promise.all([
-        schedulingService.getAvailabilityCalls(),
-        schedulingService.getBookedInterviews(),
-        schedulingService.getEvaluatorSlots(),
-        candidatesService.getAll()
-      ]);
-      setCalls(updatedCalls);
-      setInterviews(updatedInterviews);
-      setEvaluatorSlots(updatedSlots);
-      setAllCandidates(updatedCandidates);
-
-      const booked = updatedInterviews.find((i) => i.candidateId === candidate.id) || null;
-      setLastBookedInterview(booked);
-
-      setCallSimulationStep('completed');
-      toast.success(
-        'Interview Slot Confirmed',
-        `AI successfully booked ${candidate.fullName} for ${callRecord.chosenSlot || slotTimeStr}.`
-      );
-    } catch (err: any) {
-      toast.error('Scheduling Error', err.message || 'Failed to complete AI availability call.');
-      setCallSimulationStep('idle');
-    } finally {
-      setIsCalling(false);
-    }
-  };
-
-  const resetCallModal = () => {
-    setIsTriggerModalOpen(false);
-    setCallSimulationStep('idle');
-    setLiveTranscript([]);
-    setLastBookedInterview(null);
-  };
 
   const handleCreateSlot = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -282,6 +132,25 @@ export const SchedulingPage: React.FC = () => {
     toast.success('Link Copied', 'Direct interview access URL copied to clipboard.');
   };
 
+  const handleLaunchSelectedConsoles = () => {
+    const targets = selectedBookingIds.length
+      ? interviews.filter((item) => selectedBookingIds.includes(item.id))
+      : interviews;
+    if (targets.length === 0) {
+      toast.warning('No Interviews', 'Select at least one confirmed booking to launch.');
+      return;
+    }
+    targets.forEach((item) => {
+      const joinUrl = item.joinUrl || item.joinLink || `/interviews/round1/${item.candidateId}/live`;
+      window.open(joinUrl, '_blank');
+    });
+    toast.success('Launch Console', `Opened interview console for ${targets.length} candidate(s).`);
+  };
+
+  const toggleBookingSelection = (id: string) => {
+    setSelectedBookingIds((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]));
+  };
+
   if (isLoading) {
     return <LoadingState message="Loading AI availability dialer, calendar reservations, and evaluator slots..." variant="spinner" />;
   }
@@ -305,14 +174,11 @@ export const SchedulingPage: React.FC = () => {
 
             <button
               type="button"
-              onClick={() => {
-                setCallSimulationStep('idle');
-                setIsTriggerModalOpen(true);
-              }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-md active:scale-95"
+              onClick={handleLaunchSelectedConsoles}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md active:scale-95"
             >
-              <PhoneCall className="w-4 h-4" />
-              <span>Trigger AI Availability Call</span>
+              <Play className="w-4 h-4 fill-current" />
+              <span>Launch Console{selectedBookingIds.length > 0 ? ` (${selectedBookingIds.length})` : ''}</span>
             </button>
           </div>
         }
@@ -407,9 +273,25 @@ export const SchedulingPage: React.FC = () => {
               <CalendarCheck className="w-5 h-5 text-indigo-400" />
               <span>Confirmed Interview Bookings</span>
             </h2>
-            <span className="text-xs text-slate-400">
-              Synced to Google Calendar & Outlook &bull; Automated 24h & 4h Reminders Active
-            </span>
+            <div className="flex items-center gap-3">
+              {interviews.length > 0 && (
+                <label className="text-xs text-slate-400 flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={selectedBookingIds.length === interviews.length && interviews.length > 0}
+                    onChange={() =>
+                      setSelectedBookingIds(
+                        selectedBookingIds.length === interviews.length ? [] : interviews.map((item) => item.id)
+                      )
+                    }
+                  />
+                  Select all
+                </label>
+              )}
+              <span className="text-xs text-slate-400">
+                Synced to Google Calendar & Outlook â€¢ Automated 24h & 4h Reminders Active
+              </span>
+            </div>
           </div>
 
           {interviews.length === 0 ? (
@@ -417,19 +299,8 @@ export const SchedulingPage: React.FC = () => {
               <Calendar className="w-8 h-8 text-slate-500 mx-auto" />
               <div className="text-sm font-bold text-white">No Confirmed Interviews Yet</div>
               <p className="text-xs text-slate-400 max-w-md mx-auto">
-                Trigger an automated AI availability call to negotiate open slots with eligible candidates.
+                Confirmed interview bookings will appear here once slots are reserved.
               </p>
-              <button
-                type="button"
-                onClick={() => {
-                  setCallSimulationStep('idle');
-                  setIsTriggerModalOpen(true);
-                }}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-md"
-              >
-                <PhoneCall className="w-4 h-4" />
-                <span>Trigger Availability Call</span>
-              </button>
             </div>
           ) : (
             <div className="space-y-4">
@@ -445,7 +316,14 @@ export const SchedulingPage: React.FC = () => {
                     className="p-6 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-4 shadow-lg hover:border-slate-700/80 transition-all"
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
-                      <div>
+                      <div className="flex items-start gap-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedBookingIds.includes(item.id)}
+                          onChange={() => toggleBookingSelection(item.id)}
+                          className="mt-1.5 w-4 h-4 rounded border-slate-700 bg-slate-800 text-indigo-600"
+                        />
+                        <div>
                         <div className="flex flex-wrap items-center gap-2.5">
                           <Link
                             to={`/candidates/${item.candidateId}`}
@@ -470,6 +348,7 @@ export const SchedulingPage: React.FC = () => {
                             </>
                           )}
                         </div>
+                      </div>
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2 shrink-0">
@@ -512,7 +391,7 @@ export const SchedulingPage: React.FC = () => {
                           <Calendar className="w-4 h-4 text-indigo-400" />
                           <span>
                             {startDate
-                              ? `${startDate.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} • ${startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${endDate ? endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}`
+                              ? `${startDate.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} â€¢ ${startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${endDate ? endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}`
                               : item.scheduledTime}
                           </span>
                         </div>
@@ -658,19 +537,8 @@ export const SchedulingPage: React.FC = () => {
                       </button>
                     </div>
                   ) : (
-                    <div className="pt-2 border-t border-slate-800 flex items-center justify-between">
-                      <span className="text-xs text-emerald-400 font-medium">Ready for AI dialer</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedSlotId(slot.id);
-                          setCallSimulationStep('idle');
-                          setIsTriggerModalOpen(true);
-                        }}
-                        className="px-3 py-1.5 rounded-lg bg-indigo-600/30 hover:bg-indigo-600 text-indigo-300 hover:text-white text-xs font-semibold transition-colors border border-indigo-500/40"
-                      >
-                        Schedule Candidate Here
-                      </button>
+                    <div className="pt-2 border-t border-slate-800">
+                      <span className="text-xs text-emerald-400 font-medium">Open evaluator slot</span>
                     </div>
                   )}
                 </div>
@@ -801,287 +669,6 @@ export const SchedulingPage: React.FC = () => {
         </div>
       )}
 
-      {/* TRIGGER AI AVAILABILITY CALL MODAL WITH LIVE INTERACTIVE SIMULATOR */}
-      <Modal
-        isOpen={isTriggerModalOpen}
-        onClose={resetCallModal}
-        title="AI Availability Telephony Agent"
-        subtitle="Automated voice dialer calls the candidate, negotiates timeslots, and reserves evaluator calendar."
-        maxWidth="lg"
-      >
-        {callSimulationStep === 'idle' && (
-          <div className="space-y-5">
-            {/* Step 1: Candidate Selection */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-slate-300">
-                  Select Candidate for Telephony Call
-                </label>
-                <div className="flex items-center gap-1 text-[11px] bg-slate-950 p-1 rounded-lg border border-slate-800">
-                  <button
-                    type="button"
-                    onClick={() => setCandidateFilterType('eligible')}
-                    className={`px-2.5 py-1 rounded-md transition-colors ${
-                      candidateFilterType === 'eligible' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'
-                    }`}
-                  >
-                    Ceipal Approved ({eligibleCandidates.length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCandidateFilterType('all')}
-                    className={`px-2.5 py-1 rounded-md transition-colors ${
-                      candidateFilterType === 'all' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'
-                    }`}
-                  >
-                    All Candidates ({allCandidates.length})
-                  </button>
-                </div>
-              </div>
-
-              {/* Candidate Dropdown */}
-              <select
-                value={selectedCandidateId}
-                onChange={(e) => setSelectedCandidateId(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              >
-                {(candidateFilterType === 'eligible' ? eligibleCandidates : allCandidates).map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.fullName} • {c.requirementTitle} ({c.phone || 'No phone'}) • {c.status}
-                  </option>
-                ))}
-              </select>
-
-              {/* Selected Candidate Summary */}
-              {selectedCandidate && (
-                <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 space-y-1.5 text-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-white text-sm">{selectedCandidate.fullName}</span>
-                    <StatusBadge status={selectedCandidate.status} />
-                  </div>
-                  <div className="text-slate-400 flex flex-wrap items-center gap-x-3 gap-y-1">
-                    <span>Role: <strong className="text-slate-200">{selectedCandidate.requirementTitle}</strong></span>
-                    <span>&bull;</span>
-                    <span>Phone: <strong className="text-indigo-300">{selectedCandidate.phone || '+1 (415) 555-0199'}</strong></span>
-                    <span>&bull;</span>
-                    <span>Email: <strong className="text-slate-300">{selectedCandidate.email}</strong></span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Step 2: Evaluator Slot Target */}
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-300 block">
-                Target Evaluator Slot Selection
-              </label>
-              <select
-                value={selectedSlotId}
-                onChange={(e) => setSelectedSlotId(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              >
-                <option value="auto">
-                  ✨ AI Autonomous Negotiation (Proposes earliest matching slot to candidate)
-                </option>
-                {availableSlots.map((s) => {
-                  const d = new Date(s.startTime);
-                  return (
-                    <option key={s.id} value={s.id}>
-                      {s.evaluatorName} • {d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })} at {d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </option>
-                  );
-                })}
-              </select>
-              <p className="text-[11px] text-slate-400">
-                The telephony agent will verbally propose open slots with matching principal evaluators and lock the reservation once the candidate consents.
-              </p>
-            </div>
-
-            {/* Step 3: Dispatch Mode Details */}
-            <div className="p-3.5 rounded-xl bg-indigo-950/30 border border-indigo-500/30 space-y-1 text-xs">
-              <div className="font-semibold text-indigo-300 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Autonomous Telephony WebRTC Gateway</span>
-              </div>
-              <p className="text-slate-300 leading-relaxed">
-                Clicking Start will initialize the AI voice call, stream real-time speech synthesis, detect conversational agreement, and sync the confirmed slot to Google and Outlook calendars.
-              </p>
-            </div>
-
-            {/* Actions */}
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
-              <button
-                type="button"
-                onClick={resetCallModal}
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleStartCallNow}
-                disabled={!selectedCandidateId || isCalling}
-                className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2"
-              >
-                <PhoneCall className="w-4 h-4" />
-                <span>Start AI Voice Call Now</span>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* LIVE IN-PROGRESS DIALING & CONVERSATION SIMULATOR */}
-        {(callSimulationStep === 'dialing' || callSimulationStep === 'connected') && (
-          <div className="space-y-6 py-4">
-            <div className="p-5 rounded-2xl bg-indigo-950/40 border border-indigo-500/50 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-indigo-600/30 text-indigo-400 flex items-center justify-center border border-indigo-500/40 relative">
-                  <PhoneCall className="w-6 h-6 animate-pulse" />
-                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full animate-ping" />
-                </div>
-                <div>
-                  <div className="text-sm font-bold text-white flex items-center gap-2">
-                    <span>
-                      {callSimulationStep === 'dialing' ? 'Dialing Candidate...' : 'Telephony Audio Stream Active'}
-                    </span>
-                  </div>
-                  <div className="text-xs text-indigo-200 mt-0.5">
-                    Calling: <strong>{selectedCandidate?.fullName}</strong> ({selectedCandidate?.phone || '+1 415 555-0199'})
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-1.5">
-                <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="font-mono text-xs font-bold text-emerald-400 uppercase">
-                  {callSimulationStep === 'dialing' ? 'CONNECTING' : 'IN CALL'}
-                </span>
-              </div>
-            </div>
-
-            {/* Audio Waveform Visualization */}
-            <div className="flex items-center justify-center gap-1 h-12 bg-slate-950 p-3 rounded-xl border border-slate-800">
-              {Array.from({ length: 32 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="w-1 bg-indigo-500 rounded-full transition-all duration-150 animate-pulse"
-                  style={{
-                    height: `${Math.max(15, (Math.sin(i + Date.now()) * 0.5 + 0.5) * 100)}%`,
-                    animationDelay: `${i * 40}ms`
-                  }}
-                />
-              ))}
-            </div>
-
-            {/* Live Streaming Dialogue */}
-            <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
-              <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
-                Live Negotiation Dialogue
-              </div>
-              {liveTranscript.map((entry, idx) => (
-                <div
-                  key={idx}
-                  className={`p-3 rounded-xl text-xs space-y-1 transition-all ${
-                    entry.sender === 'ai'
-                      ? 'bg-slate-900 border border-slate-800 text-slate-200 ml-4'
-                      : 'bg-indigo-950/60 border border-indigo-500/40 text-white mr-4'
-                  }`}
-                >
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-indigo-400">
-                    {entry.sender === 'ai' ? 'TalentPulse AI Voice Agent' : selectedCandidate?.fullName}
-                  </div>
-                  <p className="leading-relaxed">{entry.text}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex items-center justify-center gap-2 text-xs text-slate-400 font-mono">
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-400" />
-              <span>Analyzing candidate speech & locking calendar slot...</span>
-            </div>
-          </div>
-        )}
-
-        {/* STEP 3: COMPLETED CONFIRMATION */}
-        {callSimulationStep === 'completed' && lastBookedInterview && (
-          <div className="space-y-5 py-2">
-            <div className="p-5 rounded-2xl bg-emerald-950/40 border border-emerald-500/50 space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-emerald-600/20 text-emerald-400 flex items-center justify-center border border-emerald-500/40 shrink-0">
-                  <CheckCircle2 className="w-6 h-6" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-white">Interview Confirmed & Calendar Locked</h3>
-                  <p className="text-xs text-emerald-200/90 mt-0.5">
-                    Candidate verbally accepted the proposed slot during the voice call.
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-xs">
-                <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1">
-                  <span className="text-slate-400 font-semibold block text-[10px] uppercase">
-                    Reserved Timeslot
-                  </span>
-                  <div className="font-bold text-white text-sm">
-                    {lastBookedInterview.scheduledTime}
-                  </div>
-                </div>
-
-                <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1">
-                  <span className="text-slate-400 font-semibold block text-[10px] uppercase">
-                    Assigned Evaluator
-                  </span>
-                  <div className="font-bold text-indigo-300 text-sm">
-                    {lastBookedInterview.evaluatorName}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Candidate Portal Direct URL */}
-            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2 text-xs">
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-slate-300">Candidate Direct Access Link</span>
-                <button
-                  type="button"
-                  onClick={() => handleCopyLink(`${window.location.origin}${lastBookedInterview.joinUrl}`)}
-                  className="inline-flex items-center gap-1 text-indigo-400 hover:text-indigo-300 font-semibold"
-                >
-                  <Copy className="w-3 h-3" />
-                  <span>Copy</span>
-                </button>
-              </div>
-              <div className="font-mono text-indigo-300 truncate bg-slate-900 p-2 rounded-lg border border-slate-800">
-                {window.location.origin}{lastBookedInterview.joinUrl}
-              </div>
-            </div>
-
-            {/* Next Steps: Advance to Phase 4 */}
-            <div className="flex items-center justify-between pt-3 border-t border-slate-800">
-              <button
-                type="button"
-                onClick={resetCallModal}
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold"
-              >
-                Close Window
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  resetCallModal();
-                  navigate(`/interviews/round1/${lastBookedInterview.candidateId}/setup`);
-                }}
-                className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md transition-all"
-              >
-                <span>Advance to Round 1 Setup</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        )}
-      </Modal>
 
       {/* ADD EVALUATOR SLOT MODAL */}
       <Modal

@@ -1,40 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import {
-  FileText,
-  Users,
-  MapPin,
-  Calendar,
-  DollarSign,
-  ArrowLeft,
-  UserCheck,
-  CheckCircle2,
-  Share2,
-  Sparkles
-} from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import { UserCheck } from 'lucide-react';
 import { PageHeader } from '../components/common/PageHeader';
 import { StatusBadge } from '../components/common/StatusBadge';
 import { LoadingState } from '../components/common/LoadingState';
-import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { requirementsService } from '../api/requirements.service';
-import { configService } from '../api/config.service';
-import { Requirement, MasterData } from '../types';
+import { Requirement } from '../types';
 
 export const RequirementDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const { role, user } = useAuth();
   const toast = useToast();
 
   const [req, setReq] = useState<Requirement | null>(null);
-  const [masterData, setMasterData] = useState<MasterData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Assignment edit state
   const [selectedRecruiters, setSelectedRecruiters] = useState<string[]>([]);
   const [assignedManager, setAssignedManager] = useState('');
-  const [status, setStatus] = useState<string>('received');
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -42,17 +25,12 @@ export const RequirementDetailPage: React.FC = () => {
       if (!id) return;
       setIsLoading(true);
       try {
-        const [r, md] = await Promise.all([
-          requirementsService.getById(id),
-          configService.getMasterData()
-        ]);
+        const r = await requirementsService.getById(id);
         if (r) {
           setReq(r);
           setSelectedRecruiters(r.assignedRecruiters || []);
           setAssignedManager(r.assignedTeamManager || 'Sarah Jenkins');
-          setStatus(r.status);
         }
-        setMasterData(md);
       } finally {
         setIsLoading(false);
       }
@@ -77,7 +55,8 @@ export const RequirementDetailPage: React.FC = () => {
       const updated = await requirementsService.update(req.id, {
         assignedRecruiters: selectedRecruiters,
         assignedTeamManager: assignedManager,
-        status: (selectedRecruiters.length > 0 ? 'sourcing' : status) as any
+        assignedTeamManagerId: assignedManager === 'Sarah Jenkins' ? 'user-manager-1' : assignedManager === 'Priya Kapoor' ? 'user-manager-2' : assignedManager === 'James Ortiz' ? 'user-manager-3' : '',
+        status: (selectedRecruiters.length > 0 ? 'sourcing' : req.status) as any
       });
       setReq(updated);
       toast.success('Assignment Saved', `Requirement assigned to ${selectedRecruiters.length} recruiter(s). Status updated to ${updated.status}.`);
@@ -88,10 +67,10 @@ export const RequirementDetailPage: React.FC = () => {
     }
   };
 
-  const availableRecruiters = ['David Miller', 'Rachel Adams', 'Carlos Mendez', 'Elena Vance'];
+  const availableRecruiters = ['David Miller', 'Rachel Adams', 'Carlos Mendez'];
 
   return (
-    <div id="requirement-detail-page" className="max-w-5xl mx-auto space-y-6">
+    <div id="requirement-detail-page" className="space-y-6">
       <PageHeader
         title={req.title}
         description={`Client: ${req.clientName} • Department: ${req.department} • Ref: ${req.id}`}
@@ -100,17 +79,6 @@ export const RequirementDetailPage: React.FC = () => {
           { label: req.title }
         ]}
         badge={<StatusBadge status={req.status} />}
-        actions={
-          <div className="flex items-center gap-2">
-            <Link
-              to="/candidates/new"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-md"
-            >
-              <Users className="w-4 h-4" />
-              <span>Source & Add Candidate for this JD</span>
-            </Link>
-          </div>
-        }
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -156,25 +124,6 @@ export const RequirementDetailPage: React.FC = () => {
               </div>
             )}
           </div>
-
-          {/* Sourced candidates for this JD */}
-          <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-bold text-white">Candidates Associated with this Requirement</h3>
-              <Link to="/candidates" className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold">
-                Open candidate roster
-              </Link>
-            </div>
-            <div className="p-4 rounded-xl bg-slate-950/50 border border-slate-800/80 text-xs text-slate-400 flex items-center justify-between">
-              <span>View candidates who have completed screening, RTR, or Round 1 interviews for this role.</span>
-              <Link
-                to="/candidates"
-                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold transition-colors"
-              >
-                Inspect Candidates
-              </Link>
-            </div>
-          </div>
         </div>
 
         {/* Right Column: Assignment & Distribution (Team Manager human control) */}
@@ -182,7 +131,7 @@ export const RequirementDetailPage: React.FC = () => {
           <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
             <div className="flex items-center gap-2">
               <UserCheck className="w-5 h-5 text-indigo-400" />
-              <h3 className="text-sm font-bold text-white">Team Manager Distribution</h3>
+              <h3 className="text-sm font-bold text-white">Manager Distribution</h3>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed">
               Distribute this requirement to recruiters on your team to begin sourcing and scheduling AI screening calls.
@@ -190,14 +139,17 @@ export const RequirementDetailPage: React.FC = () => {
 
             <div>
               <label className="text-xs font-semibold text-slate-300 block mb-1.5">
-                Supervising Team Manager
+                Show this job to Manager
               </label>
-              <input
-                type="text"
+              <select
                 value={assignedManager}
                 onChange={(e) => setAssignedManager(e.target.value)}
                 className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white"
-              />
+              >
+                <option value="Sarah Jenkins">Sarah Jenkins</option>
+                <option value="Priya Kapoor">Priya Kapoor</option>
+                <option value="James Ortiz">James Ortiz</option>
+              </select>
             </div>
 
             <div>
@@ -227,21 +179,6 @@ export const RequirementDetailPage: React.FC = () => {
                   );
                 })}
               </div>
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1.5">Workflow Status</label>
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white"
-              >
-                <option value="received">Received</option>
-                <option value="circulated">Circulated</option>
-                <option value="assigned">Assigned</option>
-                <option value="sourcing">Sourcing</option>
-                <option value="filled">Filled</option>
-              </select>
             </div>
 
             <button

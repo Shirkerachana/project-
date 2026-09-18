@@ -109,7 +109,7 @@ export const Round2DecisionPage: React.FC = () => {
   };
 
   return (
-    <div id="round2-decision-page" className="max-w-5xl mx-auto space-y-6">
+    <div id="round2-decision-page" className="space-y-6">
       <PageHeader
         title={`Round 2 Go/No-Go Gate: ${candidate.fullName}`}
         description="HUMAN CONTROL POINT #2: Explicit human decision required following Phase 4 AI technical evaluation."

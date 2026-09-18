@@ -2,21 +2,17 @@ import {
   LayoutDashboard,
   FileText,
   Users,
-  UserPlus,
   PhoneCall,
   CalendarCheck,
   Bot,
   UserCheck,
-  Award,
   Sliders,
-  HelpCircle,
-  FileCheck2,
   Settings,
-  ShieldCheck,
   Mail,
   Video,
   Calendar,
   ClipboardList,
+  UsersRound,
   LucideIcon
 } from 'lucide-react';
 import { UserRole } from '../types';
@@ -49,12 +45,6 @@ export const NAVIGATION_ITEMS: NavItem[] = [
     icon: Users,
     roles: ['Admin', 'CRM', 'TeamManager', 'Recruiter', 'Evaluator']
   },
-  {
-    name: 'Add Candidate (AI)',
-    href: '/candidates/new',
-    icon: UserPlus,
-    roles: ['Recruiter', 'TeamManager', 'Admin']
-  },
   // Phase 2: AI Screening & Approvals
   {
     name: 'Screening Calls',
@@ -68,6 +58,12 @@ export const NAVIGATION_ITEMS: NavItem[] = [
     href: '/approvals',
     icon: UserCheck,
     roles: ['TeamManager', 'Admin', 'Recruiter']
+  },
+  {
+    name: 'My Team',
+    href: '/team',
+    icon: UsersRound,
+    roles: ['TeamManager']
   },
   // Phase 3: Scheduling
   {
@@ -122,6 +118,6 @@ export const NAVIGATION_ITEMS: NavItem[] = [
     name: 'Settings',
     href: '/settings',
     icon: Settings,
-    roles: ['Admin', 'CRM', 'TeamManager', 'Recruiter', 'Evaluator']
+    roles: ['Admin', 'CRM']
   }
 ];

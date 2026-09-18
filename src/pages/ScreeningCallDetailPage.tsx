@@ -20,6 +20,7 @@ import { ScoreGauge } from '../components/common/ScoreGauge';
 import { LoadingState } from '../components/common/LoadingState';
 import { screeningService } from '../api/screening.service';
 import { configService } from '../api/config.service';
+import { calendarService } from '../api/calendar.service';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
 import { ScreeningCall, RubricCriterion } from '../types';
@@ -52,6 +53,20 @@ export const ScreeningCallDetailPage: React.FC = () => {
           setCall(c);
           setScores(c.rubricScores || { communication: 85, technical: 80, experience: 85 });
           setFeedback(c.aiSummary || '');
+          if ((c.transcript && c.transcript.length > 0) || c.aiSummary) {
+            calendarService.upsertScreeningTranscriptEvent({
+              callId: c.id,
+              candidateId: c.candidateId,
+              candidateName: c.candidateName,
+              roleTitle: c.requirementTitle,
+              scheduledAt: c.scheduledAt,
+              durationSeconds: c.durationSeconds,
+              summary: c.aiSummary || c.recruiterNotes,
+              transcript: c.transcript,
+              score: c.overallScore,
+              phone: c.candidatePhone
+            });
+          }
         }
         setRubric(rList);
       } finally {
@@ -83,9 +98,21 @@ export const ScreeningCallDetailPage: React.FC = () => {
         scoredBy: user?.name
       });
       setCall(updated);
+      await calendarService.upsertScreeningTranscriptEvent({
+        callId: updated.id,
+        candidateId: updated.candidateId,
+        candidateName: updated.candidateName,
+        roleTitle: updated.requirementTitle,
+        scheduledAt: updated.scheduledAt,
+        durationSeconds: updated.durationSeconds,
+        summary: feedback,
+        transcript: updated.transcript,
+        score: updated.overallScore || computedOverall,
+        phone: updated.candidatePhone
+      });
       toast.success(
         'Scoring Saved & Candidate Updated',
-        `Overall screen score set to ${updated.overallScore || computedOverall}/100. RTR email draft is now ready for recruiter review.`
+        `Overall screen score set to ${updated.overallScore || computedOverall}/100. Transcript summary saved to Calendar.`
       );
     } catch (err: any) {
       toast.error('Scoring Error', err.message);
@@ -233,24 +260,6 @@ export const ScreeningCallDetailPage: React.FC = () => {
                 <span>{isSavingScore ? 'Saving...' : 'Save & Update Candidate'}</span>
               </button>
             </div>
-          </div>
-
-          {/* Quick Action Card to Next Phase */}
-          <div className="p-5 rounded-2xl bg-amber-950/20 border border-amber-500/30 flex items-center justify-between gap-4">
-            <div>
-              <div className="text-xs font-bold text-amber-300 uppercase tracking-wider">
-                Next Workflow Step
-              </div>
-              <div className="text-xs text-slate-300 mt-0.5">
-                Review and dispatch the AI-drafted Right-to-Represent (RTR) email.
-              </div>
-            </div>
-            <Link
-              to={`/screening/calls/${call.id}/rtr`}
-              className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition-all shrink-0"
-            >
-              Open RTR
-            </Link>
           </div>
         </div>
       </div>

@@ -16,6 +16,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { NAVIGATION_ITEMS } from '../config/navigation';
+import { formatRoleLabel } from '../config/roles';
 import { UserRole } from '../types';
 import { FloatingBot } from '../components/bot/FloatingBot';
 
@@ -30,6 +31,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   // Filter navigation items by active user role
   const allowedNavItems = NAVIGATION_ITEMS.filter((item) => item.roles.includes(role));
@@ -47,7 +49,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
       {/* Mobile Backdrop */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm lg:hidden"
+          className="tp-modal-overlay fixed inset-0 z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -167,7 +169,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
               <Menu className="w-5 h-5" />
             </button>
             <div className="hidden sm:block text-xs text-slate-400">
-              Active Context: <span className="font-semibold text-slate-200">{role} Workspace</span>
+              Active Context: <span className="font-semibold text-slate-200">{formatRoleLabel(role)} Workspace</span>
             </div>
           </div>
 
@@ -197,11 +199,14 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
             <div className="relative">
               <button
                 type="button"
-                onClick={() => setRoleMenuOpen(!roleMenuOpen)}
+                onClick={() => {
+                  setRoleMenuOpen(!roleMenuOpen);
+                  setProfileOpen(false);
+                }}
                 className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-200 transition-colors shadow-sm"
               >
                 <Briefcase className="w-3.5 h-3.5 text-indigo-400" />
-                <span>Role: <strong className="text-indigo-300">{role}</strong></span>
+                <span>Role: <strong className="text-indigo-300">{formatRoleLabel(role)}</strong></span>
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
               </button>
 
@@ -222,7 +227,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
                         role === r ? 'font-bold text-indigo-400 bg-slate-800/40' : 'text-slate-300'
                       }`}
                     >
-                      <span>{r}</span>
+                      <span>{formatRoleLabel(r)}</span>
                       {role === r && <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />}
                     </button>
                   ))}
@@ -230,15 +235,24 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
               )}
             </div>
 
-            {/* Current User Card */}
-            <div className="flex items-center gap-2.5 pl-2 border-l border-slate-800">
-              <div className="w-8 h-8 rounded-full bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center text-xs font-bold text-indigo-300">
-                {user?.name.charAt(0) || 'U'}
-              </div>
-              <div className="hidden md:block text-left text-xs">
-                <div className="font-semibold text-white truncate max-w-[120px]">{user?.name}</div>
-                <div className="text-[10px] text-slate-400">{user?.title || role}</div>
-              </div>
+            {/* Current User Card / Basic Profile */}
+            <div className="relative flex items-center gap-2.5 pl-2 border-l border-slate-800">
+              <button
+                type="button"
+                onClick={() => {
+                  setProfileOpen(!profileOpen);
+                  setRoleMenuOpen(false);
+                }}
+                className="flex items-center gap-2.5 rounded-xl px-1.5 py-1 hover:bg-slate-800/70 transition-colors"
+              >
+                <div className="w-8 h-8 rounded-full bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center text-xs font-bold text-indigo-300">
+                  {user?.name.charAt(0) || 'U'}
+                </div>
+                <div className="hidden md:block text-left text-xs">
+                  <div className="font-semibold text-white truncate max-w-[120px]">{user?.name}</div>
+                  <div className="text-[10px] text-slate-400">{user?.title || role}</div>
+                </div>
+              </button>
               <button
                 type="button"
                 onClick={logout}
@@ -247,12 +261,42 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
               >
                 <LogOut className="w-4 h-4" />
               </button>
+
+              {profileOpen && (
+                <div className="absolute right-0 top-full mt-2 w-72 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-4 z-50">
+                  <div className="flex items-center gap-3 pb-3 border-b border-slate-800">
+                    <div className="w-11 h-11 rounded-full bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center text-sm font-bold text-indigo-300">
+                      {user?.name.charAt(0) || 'U'}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-sm font-bold text-white truncate">{user?.name}</div>
+                      <div className="text-[11px] text-indigo-300 font-semibold">{formatRoleLabel(role)}</div>
+                    </div>
+                  </div>
+                  <div className="pt-3 space-y-2 text-xs">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Email</div>
+                      <div className="text-slate-200 truncate">{user?.email}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Title</div>
+                      <div className="text-slate-200">{user?.title || role}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Department</div>
+                      <div className="text-slate-200">{user?.department || 'Talent Acquisition'}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </header>
 
         {/* Main Routed Page Container */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">{children}</main>
+        <main className="flex-1 p-4 sm:p-5 lg:px-6 lg:py-5 w-full min-h-0 flex flex-col">
+          <div className="flex-1 w-full min-h-0">{children}</div>
+        </main>
         <FloatingBot />
       </div>
     </div>

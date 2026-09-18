@@ -86,7 +86,7 @@ export const Round1SetupPage: React.FC = () => {
   };
 
   return (
-    <div id="round1-setup-page" className="max-w-5xl mx-auto space-y-6">
+    <div id="round1-setup-page" className="space-y-6">
       <PageHeader
         title={`Configure AI Round 1 Interview: ${candidate.fullName}`}
         description="Phase 4: Select questions, difficulty level, and rubric weighting for the AI Avatar technical evaluator."
